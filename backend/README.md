@@ -11,6 +11,8 @@
    - `source .venv/bin/activate`
 
 ### Migrations
+- If your RDS instance doesn't have the target database yet, create it once (reads credentials from `../.env`):
+  - `uv run python scripts/create_database.py --db <db_name>`
 - Run migrations:
   - `uv run alembic upgrade head`
 - Create a new migration:
