@@ -1,1 +1,1 @@
-# Science Competitions Insight (SCI)
+# NaviMinD
