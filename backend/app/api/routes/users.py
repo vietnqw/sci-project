@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,8 +27,6 @@ from app.core.errors import DuplicateUserError, UserNotFoundError, Authorization
 
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
 
 
 async def _get_user_or_404(db: AsyncSession, user_id: UUID) -> User:
@@ -75,13 +73,16 @@ async def list_users(
 
     return UserList(users=[UserResponse.model_validate(u) for u in users], total=total)
 
+
 @router.post(
     "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_anonymous)],
 )
-async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)) -> UserResponse:
+async def create_user(
+    payload: UserCreate, db: AsyncSession = Depends(get_db)
+) -> UserResponse:
     """
     Register a new user.
 
@@ -116,7 +117,7 @@ async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)) -
 async def update_user(
     user_id: UUID,
     payload: UserUpdate,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
     """
@@ -128,7 +129,10 @@ async def update_user(
     user = await _get_user_or_404(db, user_id)
 
     # Permission: admin or self
-    if getattr(current_user, "role", None) != UserRole.ADMIN and getattr(current_user, "id", None) != user_id:
+    if (
+        getattr(current_user, "role", None) != UserRole.ADMIN
+        and getattr(current_user, "id", None) != user_id
+    ):
         raise AuthorizationError("Not allowed")
 
     update_data = payload.model_dump(exclude_unset=True)

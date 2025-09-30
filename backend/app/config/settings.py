@@ -55,7 +55,9 @@ class Settings(BaseSettings):
     @property
     def POSTGRES_URL(self) -> str:
         """Asynchronous PostgreSQL URL for SQLAlchemy"""
-        db_name = self.POSTGRES_DB_TEST if self.ENVIRONMENT == "test" else self.POSTGRES_DB
+        db_name = (
+            self.POSTGRES_DB_TEST if self.ENVIRONMENT == "test" else self.POSTGRES_DB
+        )
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{db_name}"
@@ -72,8 +74,10 @@ class Settings(BaseSettings):
     def check_secret_key(cls, v: str) -> str:
         if not v:
             raise ValueError("SECRET_KEY is required")
-        if len(v) < 32:    # noqa: PLR2004
-            raise ValueError("SECRET_KEY must be at least 32 characters long, use openssl rand -hex 32")
+        if len(v) < 32:  # noqa: PLR2004
+            raise ValueError(
+                "SECRET_KEY must be at least 32 characters long, use openssl rand -hex 32"
+            )
         return v
 
 

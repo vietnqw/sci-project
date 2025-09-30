@@ -16,9 +16,9 @@ class UserValidationMixin:
     """
     UserValidationMixin adds reusable validators for user fields.
 
-    It can be inherited by Pydantic schemas to keep validation 
-    consistent across create/update models. Optional fields pass 
-    through if None; provided values are validated for format, 
+    It can be inherited by Pydantic schemas to keep validation
+    consistent across create/update models. Optional fields pass
+    through if None; provided values are validated for format,
     non-emptiness, or strength.
     """
 
@@ -176,7 +176,9 @@ class UserFilterParams(BaseModel):
     """Query parameters for filtering/paginating user list."""
 
     skip: int = Field(default=0, ge=0, description="Number of users to skip")
-    limit: int = Field(default=100, ge=1, le=1000, description="Number of users to return")
+    limit: int = Field(
+        default=100, ge=1, le=1000, description="Number of users to return"
+    )
     role: UserRole | None = Field(None, description="Filter by user role")
     is_active: bool | None = Field(None, description="Filter by active status")
     search: str | None = Field(None, description="Search by name or email")

@@ -82,5 +82,3 @@ Validation at the Pydantic/FastAPI layer returns the standard 422 error format p
 - Prefer specific errors (e.g., DuplicateUserError) over COMMON_* when possible
 - Reuse existing codes; add new codes in `app/core/errors.py` with a clear prefix
 - Keep messages user-friendly; use `details` for developer/diagnostic context
-
-

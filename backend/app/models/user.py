@@ -24,7 +24,9 @@ class User(Base):
     phone_number = Column(String(16), nullable=False)
     organization = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(SAEnum(UserRole, name="userrole"), nullable=False, default=UserRole.CREATOR)
+    role = Column(
+        SAEnum(UserRole, name="userrole"), nullable=False, default=UserRole.CREATOR
+    )
     is_active = Column(Boolean(), nullable=False, default=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

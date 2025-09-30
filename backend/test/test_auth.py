@@ -4,7 +4,9 @@ import pytest
 @pytest.mark.asyncio
 async def test_login_success(client, create_user):
     user = await create_user("jane@example.com", "StrongPass123")
-    resp = await client.post("/auth/login", json={"email": user.email, "password": "StrongPass123"})
+    resp = await client.post(
+        "/auth/login", json={"email": user.email, "password": "StrongPass123"}
+    )
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert "access_token" in data
@@ -13,7 +15,9 @@ async def test_login_success(client, create_user):
 
 @pytest.mark.asyncio
 async def test_login_invalid_credentials(client):
-    resp = await client.post("/auth/login", json={"email": "nope@example.com", "password": "bad"})
+    resp = await client.post(
+        "/auth/login", json={"email": "nope@example.com", "password": "bad"}
+    )
     assert resp.status_code == 400
     err = resp.json().get("error", {})
     assert err.get("code") == "COMMON_400"
@@ -34,5 +38,3 @@ async def test_me_success(client, create_user, auth_header_factory):
     resp = await client.get("/auth/me", headers=headers)
     assert resp.status_code == 200
     assert resp.json()["email"] == user.email
-
-

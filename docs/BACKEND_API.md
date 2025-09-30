@@ -196,5 +196,3 @@ curl -X DELETE \
   - Passwords must be strong (min 8, upper+lower+digit)
   - Phone numbers must be valid E.164 format (10–16 digits)
   - Unknown fields in requests are rejected
-
-

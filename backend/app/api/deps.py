@@ -82,5 +82,3 @@ async def ensure_self_user(
     if user.id != user_id:
         raise AuthorizationError("Operation allowed only for the resource owner")
     return user
-
-

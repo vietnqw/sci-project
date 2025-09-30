@@ -99,5 +99,3 @@ class DatabaseError(APIError):
     http_status = 500
     code = "DB_001"
     message = "Database error"
-
-
