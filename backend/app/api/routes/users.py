@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +23,7 @@ from app.schemas.user import (
     UserUpdate,
 )
 from app.core.security import hash_password, verify_password
+from app.core.errors import DuplicateUserError, UserNotFoundError, AuthorizationError
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -34,7 +35,7 @@ async def _get_user_or_404(db: AsyncSession, user_id: UUID) -> User:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise UserNotFoundError()
     return user
 
 
@@ -90,7 +91,7 @@ async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)) -
     # Unique email check
     exists = await db.execute(select(User).where(User.email == payload.email))
     if exists.scalar_one_or_none() is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise DuplicateUserError()
 
     user = User(
         email=str(payload.email),
@@ -128,7 +129,7 @@ async def update_user(
 
     # Permission: admin or self
     if getattr(current_user, "role", None) != UserRole.ADMIN and getattr(current_user, "id", None) != user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+        raise AuthorizationError("Not allowed")
 
     update_data = payload.model_dump(exclude_unset=True)
 
@@ -137,7 +138,7 @@ async def update_user(
     if new_email and new_email != user.email:
         exists = await db.execute(select(User).where(User.email == new_email))
         if exists.scalar_one_or_none() is not None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+            raise DuplicateUserError()
 
     for field in ("email", "full_name", "phone_number", "organization"):
         if field in update_data:
@@ -167,7 +168,9 @@ async def change_password(
     user = await _get_user_or_404(db, user_id)
 
     if not verify_password(payload.current_password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+        from app.core.errors import BadRequestError
+
+        raise BadRequestError("Current password is incorrect")
 
     user.hashed_password = hash_password(payload.new_password)
     await db.flush()

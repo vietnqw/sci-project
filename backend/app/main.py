@@ -6,6 +6,8 @@ from app.config.settings import settings
 from app.config.database import dispose_engine
 from app.core.logging import setup_logging, get_logger
 from app.api.main import api_router
+from app.core.errors import APIError, error_payload
+from fastapi.responses import JSONResponse
 
 
 # Setting up unified logging for development
@@ -38,6 +40,11 @@ app = FastAPI(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.exception_handler(APIError)
+async def handle_api_error(_request, exc: APIError):  # noqa: ANN001
+    return JSONResponse(status_code=exc.http_status, content=error_payload(exc))
 
 
 if __name__ == "__main__":
