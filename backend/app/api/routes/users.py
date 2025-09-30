@@ -1,6 +1,4 @@
 from uuid import UUID
-import hashlib
-import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, or_, select
@@ -24,38 +22,12 @@ from app.schemas.user import (
     UserStatusUpdate,
     UserUpdate,
 )
+from app.core.security import hash_password, verify_password
 
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-# ----------------------------
-# Password hashing utilities
-# ----------------------------
-
-def _hash_password(password: str, *, iterations: int = 600_000) -> str:
-    """Hash a password using PBKDF2-HMAC-SHA256 with a random salt.
-
-    Stored format: "pbkdf2_sha256$<iterations>$<salt_hex>$<hash_hex>"
-    """
-
-    salt = secrets.token_bytes(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
-    return f"pbkdf2_sha256${iterations}${salt.hex()}${dk.hex()}"
-
-
-def _verify_password(plain_password: str, stored_hash: str) -> bool:
-    try:
-        algo, iterations_s, salt_hex, hash_hex = stored_hash.split("$")
-        if algo != "pbkdf2_sha256":
-            return False
-        iterations = int(iterations_s)
-        salt = bytes.fromhex(salt_hex)
-        expected = bytes.fromhex(hash_hex)
-        dk = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, iterations)
-        return secrets.compare_digest(dk, expected)
-    except Exception:
-        return False
 
 
 async def _get_user_or_404(db: AsyncSession, user_id: UUID) -> User:
@@ -102,19 +74,6 @@ async def list_users(
 
     return UserList(users=[UserResponse.model_validate(u) for u in users], total=total)
 
-
-@router.get("/{user_id}", response_model=UserResponse, dependencies=[Depends(ensure_self_user)])
-async def get_user(user_id: UUID, db: AsyncSession = Depends(get_db)) -> UserResponse:
-    """
-    Get user details by user ID.
-
-    Permissions:
-        - Only the user themselves can access their own details.
-    """
-    user = await _get_user_or_404(db, user_id)
-    return UserResponse.model_validate(user)
-
-
 @router.post(
     "/",
     response_model=UserResponse,
@@ -138,7 +97,7 @@ async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)) -
         full_name=payload.full_name,
         phone_number=payload.phone_number,
         organization=payload.organization,
-        hashed_password=_hash_password(payload.password),
+        hashed_password=hash_password(payload.password),
         role=UserRole.CREATOR,
         is_active=True,
     )
@@ -207,10 +166,10 @@ async def change_password(
     """
     user = await _get_user_or_404(db, user_id)
 
-    if not _verify_password(payload.current_password, user.hashed_password):
+    if not verify_password(payload.current_password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
 
-    user.hashed_password = _hash_password(payload.new_password)
+    user.hashed_password = hash_password(payload.new_password)
     await db.flush()
 
 

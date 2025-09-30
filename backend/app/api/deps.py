@@ -1,16 +1,3 @@
-"""Auth/permission dependencies for API routes.
-
-This module provides lightweight dependencies to:
-- require anonymous requests
-- load current user from a simple Bearer token (UUID)
-- require admin users
-- require that the current user matches a path user_id
-
-Note: This is a minimal implementation to enforce permissions without
-introducing a full authentication system. The Authorization header is
-interpreted as: "Bearer <user_uuid>".
-"""
-
 from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, status
@@ -18,10 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
+from app.core.security import verify_token
 from app.models.user import User, UserRole
 
 
-def _parse_bearer_user_id(authorization: str | None) -> UUID:
+def _parse_bearer_token(authorization: str | None) -> str:
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -33,14 +21,7 @@ def _parse_bearer_user_id(authorization: str | None) -> UUID:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authorization header",
         )
-    token = parts[1].strip()
-    try:
-        return UUID(token)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token format",
-        )
+    return parts[1].strip()
 
 
 async def get_current_user(
@@ -48,7 +29,21 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Resolve current active user from Authorization: Bearer <uuid>."""
-    user_id = _parse_bearer_user_id(authorization)
+    token = _parse_bearer_token(authorization)
+    user_id_str = verify_token(token)
+    if user_id_str is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    try:
+        user_id = UUID(user_id_str)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token subject",
+        )
+
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:
@@ -80,19 +75,14 @@ async def require_anonymous(
     """Ensure the request is anonymous (not logged-in)."""
     if authorization is None:
         return
-    # If an Authorization header is present and valid, reject as already logged-in
-    try:
-        user_id = _parse_bearer_user_id(authorization)
-        result = await db.execute(select(User.id).where(User.id == user_id))
-        if result.scalar_one_or_none() is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Already logged in",
-            )
-    except HTTPException:
-        # Invalid tokens are treated as authentication errors
-        raise
-    # If header existed but user not found, treat as unauthorized rather than anonymous
+    # If an Authorization header is present, treat as already logged-in if token is valid
+    token = _parse_bearer_token(authorization)
+    if verify_token(token) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Already logged in",
+        )
+    # Otherwise invalid/expired token -> unauthorized
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid credentials",

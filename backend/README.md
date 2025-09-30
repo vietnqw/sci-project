@@ -11,8 +11,9 @@
    - `source .venv/bin/activate`
 
 ### Migrations
-- If your RDS instance doesn't have the target database yet, create it once (reads credentials from `../.env`):
-  - `uv run python scripts/create_database.py --db <db_name>`
+- If your Postgres instance doesn't have the target database yet, create it (reads credentials from `../.env`):
+  - `uv run python scripts/manage_database.py create --db <db_name>`
+  - To drop the database (dangerous): `uv run python scripts/manage_database.py drop --db <db_name>`
 - Run migrations:
   - `uv run alembic upgrade head`
 - Create a new migration:

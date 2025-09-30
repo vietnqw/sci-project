@@ -46,6 +46,11 @@ class Settings(BaseSettings):
         default=3600, description="Database pool recycle time in seconds"
     )
 
+    # Auth / JWT Configuration
+    SECRET_KEY: str = "changeme-in-env"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+
     @property
     def DEVELOPMENT_MODE(self) -> bool:
         """Derive development mode from environment."""
