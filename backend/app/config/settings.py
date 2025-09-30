@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     )
 
     # Auth / JWT Configuration
-    SECRET_KEY: str = "changeme-in-env"
+    SECRET_KEY: str = Field(min_length=32, description="JWT secret key")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
@@ -68,6 +68,16 @@ class Settings(BaseSettings):
     def POSTGRES_URL_SYNC(self) -> str:
         """Synchronous PostgreSQL URL for Alembic"""
         return self.POSTGRES_URL.replace("asyncpg", "psycopg2")
+
+    # add check for secret key
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def check_secret_key(cls, v: str) -> str:
+        if not v:
+            raise ValueError("SECRET_KEY is required")
+        if len(v) != 32:    # noqa: PLR2004
+            raise ValueError("SECRET_KEY must be 32 characters long, use openssl rand -hex 32")
+        return v
 
 
 settings = Settings()  # type: ignore
