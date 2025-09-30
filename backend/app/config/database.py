@@ -1,6 +1,7 @@
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.config.settings import settings
 from app.core.logging import get_logger
@@ -10,14 +11,22 @@ logger = get_logger(__name__)
 
 
 # Create async engine (the main database connection)
-engine = create_async_engine(
-    url=settings.POSTGRES_URL,
-    pool_size=settings.POSTGRES_POOL_SIZE,
-    max_overflow=settings.POSTGRES_MAX_OVERFLOW,
-    pool_timeout=settings.POSTGRES_POOL_TIMEOUT,
-    pool_recycle=settings.POSTGRES_POOL_RECYCLE,
-    echo=False,  # whether to show SQL query in logs
-)
+_is_test_db = settings.POSTGRES_DB.endswith("_test")
+if _is_test_db:
+    engine = create_async_engine(
+        url=settings.POSTGRES_URL,
+        poolclass=NullPool,
+        echo=False,
+    )
+else:
+    engine = create_async_engine(
+        url=settings.POSTGRES_URL,
+        pool_size=settings.POSTGRES_POOL_SIZE,
+        max_overflow=settings.POSTGRES_MAX_OVERFLOW,
+        pool_timeout=settings.POSTGRES_POOL_TIMEOUT,
+        pool_recycle=settings.POSTGRES_POOL_RECYCLE,
+        echo=False,  # whether to show SQL query in logs
+    )
 
 # Create session factory (to manage database sessions)
 async_session_maker = async_sessionmaker(

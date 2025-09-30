@@ -67,7 +67,7 @@ class InterceptHandler(logging.Handler):
 def setup_logging(
     log_level: str = "INFO",
     log_file: str = "logs/app.log",
-    development_mode: bool = True,
+    environment: str = "local",
 ):
     """
     Configure unified logging using Loguru
@@ -75,7 +75,7 @@ def setup_logging(
     Args:
         log_level: Minimum log level to capture
         log_file: Path to log file for production
-        development_mode: if True, disables file logging and enqueue for development
+        environment: if "local", disables file logging and enqueue for development
     """
 
     # Clear any existing handlers
@@ -101,7 +101,7 @@ def setup_logging(
     )
 
     # Add file handler for production mode
-    if not development_mode:
+    if environment == "production":
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         logger.add(

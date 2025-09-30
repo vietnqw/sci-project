@@ -36,7 +36,7 @@ class UserValidationMixin:
             raise ValueError("Password must contain at least one digit")
         return value
 
-    @field_validator("full_name")
+    @field_validator("full_name", check_fields=False)
     @classmethod
     def _validate_full_name_not_blank(cls, value: str | None) -> str | None:
         if value is None:
@@ -45,7 +45,7 @@ class UserValidationMixin:
             raise ValueError("Full name cannot be empty")
         return value
 
-    @field_validator("organization")
+    @field_validator("organization", check_fields=False)
     @classmethod
     def _validate_organization_not_blank(cls, value: str | None) -> str | None:
         if value is None:
@@ -54,7 +54,7 @@ class UserValidationMixin:
             raise ValueError("Organization cannot be empty")
         return value
 
-    @field_validator("phone_number")
+    @field_validator("phone_number", check_fields=False)
     @classmethod
     def _validate_phone_number(cls, value: str | None) -> str | None:
         if value is None:
@@ -65,7 +65,7 @@ class UserValidationMixin:
             raise ValueError("Invalid phone number format")
         return value
 
-    @field_validator("password")
+    @field_validator("password", check_fields=False)
     @classmethod
     def _validate_password_strength(cls, value: str | None) -> str | None:
         return cls.validate_password_strength(value)
@@ -78,8 +78,6 @@ class UserBase(UserValidationMixin, BaseModel):
     full_name: str = Field(
         ..., min_length=1, max_length=255, description="Full name of the user"
     )
-    role: UserRole = Field(..., description="Role of the user")
-    is_active: bool = Field(..., description="Active status of the user")
 
 
 class UserProfileBase(UserBase):
@@ -107,6 +105,8 @@ class UserResponse(UserProfileBase):
     """User response schema."""
 
     id: UUID = Field(..., description="Unique identifier of the user")
+    role: UserRole = Field(..., description="Role of the user")
+    is_active: bool = Field(..., description="Active status of the user")
     created_at: datetime = Field(..., description="Timestamp when the user was created")
     updated_at: datetime = Field(
         ..., description="Timestamp when the user information was last updated"

@@ -39,7 +39,7 @@ async def _get_user_or_404(db: AsyncSession, user_id: UUID) -> User:
     return user
 
 
-@router.get("/", response_model=UserList, dependencies=[Depends(get_current_admin_user)])
+@router.get("", response_model=UserList, dependencies=[Depends(get_current_admin_user)])
 async def list_users(
     params: UserFilterParams = Depends(),
     db: AsyncSession = Depends(get_db),
@@ -76,7 +76,7 @@ async def list_users(
     return UserList(users=[UserResponse.model_validate(u) for u in users], total=total)
 
 @router.post(
-    "/",
+    "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_anonymous)],

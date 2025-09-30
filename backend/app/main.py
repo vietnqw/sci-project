@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 setup_logging(
     log_level=settings.LOG_LEVEL,
     log_file=settings.LOG_FILE,
-    development_mode=settings.DEVELOPMENT_MODE,
+    environment=settings.ENVIRONMENT,
 )
 logger = get_logger(__name__)
 
