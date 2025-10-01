@@ -231,20 +231,49 @@ export default function AdminUsersPage() {
               <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
               <p className="text-sm text-gray-600">Review, search, and manage roles for all platform users.</p>
             </div>
-            <Link
-              href="/admin"
-              className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Back to Admin Dashboard
-            </Link>
           </div>
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {summary.map((item) => (
-              <div key={item.label} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">{item.label}</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">{item.value}</p>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">Total Users</p>
+                  <p className="text-3xl font-bold mt-1">{total}</p>
+                </div>
+                <div className="bg-white/20 rounded-full p-3">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11c1.657 0 3-1.567 3-3.5S17.657 4 16 4s-3 1.567-3 3.5 1.343 3.5 3 3.5zM8 11c1.657 0 3-1.567 3-3.5S9.657 4 8 4 5 5.567 5 7.5 6.343 11 8 11zm0 2c-2.761 0-5 1.79-5 4v1h10v-1c0-2.21-2.239-4-5-4zm8 0c-.695 0-1.356.108-1.965.308 1.17.74 1.965 1.867 1.965 3.192v1H21v-1c0-2.21-2.239-4-5-4z" />
+                  </svg>
+                </div>
               </div>
-            ))}
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">Active</p>
+                  <p className="text-3xl font-bold mt-1">{summary.find(i => i.label === 'Active')?.value}</p>
+                </div>
+                <div className="bg-white/20 rounded-full p-3">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">Admins</p>
+                  <p className="text-3xl font-bold mt-1">{summary.find(i => i.label === 'Admins')?.value}</p>
+                </div>
+                <div className="bg-white/20 rounded-full p-3">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.333 0-10 1.667-10 5v1h20v-1c0-3.333-6.667-5-10-5z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 

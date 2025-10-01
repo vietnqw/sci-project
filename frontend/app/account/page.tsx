@@ -218,7 +218,7 @@ export default function AccountPage() {
     });
 
   const activeCompetitionsCount = userCompetitions.filter(c => c.is_active).length;
-  const inactiveCompetitionsCount = userCompetitions.filter(c => !c.is_active).length;
+  const featuredCompetitionsCount = userCompetitions.filter(c => c.is_featured).length;
 
   const stats = [
     { label: 'Role', value: user.role === 'ADMIN' ? 'Administrator' : 'Creator' },
@@ -370,15 +370,15 @@ export default function AccountPage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl p-6 text-white shadow-lg">
+                  <div className="bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-gray-100 text-sm font-medium">Inactive</p>
-                        <p className="text-3xl font-bold mt-1">{inactiveCompetitionsCount}</p>
+                        <p className="text-amber-50 text-sm font-medium">Featured</p>
+                        <p className="text-3xl font-bold mt-1">{featuredCompetitionsCount}</p>
                       </div>
                       <div className="bg-white/20 rounded-full p-3">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                          <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
                         </svg>
                       </div>
                     </div>
@@ -628,13 +628,6 @@ export default function AccountPage() {
                   >
                     Go to Competition Management →
                   </Link>
-                </div>
-
-                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm md:col-span-2">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Management Assistance</h3>
-                  <p className="text-sm text-gray-600">
-                    Switch between user perspectives when you need to troubleshoot or update competitions and profile settings.
-                  </p>
                 </div>
               </div>
             )}
