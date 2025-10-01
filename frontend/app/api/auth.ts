@@ -33,9 +33,16 @@ export interface AuthResponse {
 
 class AuthAPI {
   async signUp(data: SignUpData): Promise<User> {
-    return apiRequest<User>('/api/v1/auth/signup', {
+    // New backend registers users via /users
+    return apiRequest<User>('/api/v1/users', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        email: data.email,
+        full_name: data.full_name,
+        phone_number: data.phone_number,
+        organization: data.organization,
+        password: data.password,
+      }),
     });
   }
 

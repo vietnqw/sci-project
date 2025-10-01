@@ -83,7 +83,7 @@ class ConflictError(APIError):
 
 class DuplicateUserError(ConflictError):
     code = "USER_002"
-    message = "User already exists"
+    message = "Email already registered"
 
 
 class RateLimitError(APIError):

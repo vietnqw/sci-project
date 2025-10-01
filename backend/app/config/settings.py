@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
+    # CORS Configuration
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000",
+        description="Comma-separated list of allowed origins for CORS",
+    )
+
     @property
     def POSTGRES_URL(self) -> str:
         """Asynchronous PostgreSQL URL for SQLAlchemy"""
@@ -79,6 +85,11 @@ class Settings(BaseSettings):
                 "SECRET_KEY must be at least 32 characters long, use openssl rand -hex 32"
             )
         return v
+
+    @property
+    def CORS_ORIGINS_LIST(self) -> list[str]:
+        """Return CORS origins as a clean list, parsed from comma-separated env."""
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
 
 settings = Settings()  # type: ignore

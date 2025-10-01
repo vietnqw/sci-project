@@ -75,14 +75,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signup = async (email: string, password: string, fullName: string, organization: string, phoneNumber: string) => {
     try {
-      const userData = await authAPI.signUp({
+      await authAPI.signUp({
         email,
         password,
         full_name: fullName,
         organization,
         phone_number: phoneNumber,
       });
-      setUser(userData);
+      // Auto-login after successful registration
+      const auth = await authAPI.login({ email, password });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', auth.access_token);
+      }
+      setUser(auth.user);
     } catch (error) {
       console.error('Signup failed:', error);
       throw error;

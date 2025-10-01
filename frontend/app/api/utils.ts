@@ -63,6 +63,24 @@ export async function apiRequest<T>(
     if (!response.ok) {
       const errorData: ApiErrorPayload = await response.json().catch(() => ({ detail: 'Network error' }));
 
+      // Handle FastAPI 422 validation errors with array detail
+      if (response.status === 422) {
+        const rawDetail: any = (errorData as any).detail;
+        let message = 'Validation error';
+        if (Array.isArray(rawDetail)) {
+          message = rawDetail
+            .map((d: any) => {
+              const loc = Array.isArray(d?.loc) ? d.loc.slice(1).join('.') : d?.loc;
+              const msg = d?.msg || 'Invalid value';
+              return loc ? `${loc}: ${msg}` : msg;
+            })
+            .join(', ');
+        } else if (typeof rawDetail === 'string') {
+          message = rawDetail;
+        }
+        throw new ApiError(message, response.status, 'VALIDATION_ERROR');
+      }
+
       if (errorData.error) {
         if (errorData.error.type === 'validation_error' && errorData.error.field_errors) {
           throw new ApiError(
@@ -81,7 +99,9 @@ export async function apiRequest<T>(
           );
         }
       } else if (errorData.detail) {
-        throw new ApiError(errorData.detail, response.status);
+        const detail = (errorData as any).detail;
+        const message = typeof detail === 'string' ? detail : JSON.stringify(detail);
+        throw new ApiError(message, response.status);
       } else {
         throw new ApiError(`HTTP error! status: ${response.status}`, response.status);
       }

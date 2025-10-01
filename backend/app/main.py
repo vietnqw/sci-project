@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
 from app.config.database import dispose_engine
@@ -37,6 +38,15 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
+)
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS_LIST,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

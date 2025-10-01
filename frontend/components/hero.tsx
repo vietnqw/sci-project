@@ -10,18 +10,30 @@ const logos = [
 ];
 
 const Hero = () => (
-  <div className="relative flex min-h-screen w-full items-start justify-center px-4 sm:px-6 lg:px-8 overflow-hidden pt-20 sm:pt-24">
-    {/* Background image - responsive positioning */}
+  <div className="relative flex h-[520px] sm:h-[600px] md:h-[640px] lg:h-[780px] w-full items-start justify-center px-4 sm:px-6 lg:px-8 overflow-hidden pt-20 sm:pt-24">
+    {/* Blurred full-bleed background (lowest layer) */}
+    <div className="absolute inset-0 z-0 pointer-events-none">
+      <Image
+        src="/assets/images/home-hero.jpg"
+        alt=""
+        fill
+        sizes="100vw"
+        className="object-cover blur-2xl scale-110"
+        priority={false}
+      />
+    </div>
+
+    {/* Foreground background image - responsive positioning (not blurred) */}
     <Image
       src="/assets/images/home-hero.jpg"
       alt="STEM students working on robotics"
       width={1200}
       height={1200}
-      className="absolute inset-0 right-0 ml-auto w-full h-full md:w-[60%] lg:w-[70%] xl:w-[920px] md:h-full lg:h-[780px] rounded-bl-[50px] lg:rounded-bl-[100px] object-cover object-center z-0"
+      className="absolute inset-0 right-0 ml-auto w-full h-full md:w-[60%] lg:w-[70%] xl:w-[920px] md:h-full lg:h-[780px] rounded-bl-[50px] lg:rounded-bl-[100px] object-cover object-center z-10"
       priority
     />
 
-    <div className="container mx-auto relative z-10 w-full mt-16 sm:mt-20">
+    <div className="container mx-auto relative z-20 w-full mt-16 sm:mt-20">
       <div className="grid grid-cols-1 lg:grid-cols-12 items-start">
         {/* Content card - responsive sizing */}
         <div className="col-span-1 lg:col-span-7 xl:col-span-6 rounded-xl border border-white bg-white/90 py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 shadow-lg shadow-black/10 backdrop-blur-sm backdrop-saturate-200 mx-auto lg:mx-0 max-w-lg lg:max-w-none">
