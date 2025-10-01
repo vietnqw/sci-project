@@ -47,6 +47,33 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Resolve current user if Authorization header is present; otherwise return None.
+
+    If an Authorization header is provided but invalid, raise NotAuthenticatedError.
+    """
+    if authorization is None:
+        return None
+    token = _parse_bearer_token(authorization)
+    user_id_str = verify_token(token)
+    if user_id_str is None:
+        raise InvalidTokenError()
+    try:
+        user_id = UUID(user_id_str)
+    except Exception:
+        raise InvalidTokenError("Invalid token subject")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise InvalidTokenError("User not found")
+    if not user.is_active:
+        raise InactiveUserError()
+    return user
+
+
 async def get_current_admin_user(
     user: User = Depends(get_current_user),
 ) -> User:

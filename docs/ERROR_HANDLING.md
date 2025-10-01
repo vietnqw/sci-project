@@ -43,6 +43,12 @@ All application errors return:
   - `USER_001` User not found
   - `USER_002` User already exists
 
+- COMPETITION
+  - `COMPETITION_001` Competition not found
+  - `COMPETITION_002` Not allowed to filter competitions by owner_id
+  - `COMPETITION_003` Not allowed to access or modify this competition
+  - `COMPETITION_004` Invalid competition update payload
+
 - COMMON
   - `COMMON_400` Bad request
   - `COMMON_404` Resource not found
@@ -72,6 +78,11 @@ All application errors return:
   - `UserNotFoundError` (USER_001) when user id not found
   - `AuthorizationError` (AUTH_003) when non-owner/non-admin updates
   - `BadRequestError` (COMMON_400) for wrong current password
+
+- `app/api/routes/competitions.py`
+  - `CompetitionNotFoundError` (COMPETITION_001) when competition id not found
+  - `ForbiddenCompetitionOwnerFilterError` (COMPETITION_002) when non-admin filters by `owner_id` or lists other users' competitions
+  - `ForbiddenCompetitionAccessError` (COMPETITION_003) when non-owner/non-admin updates, deletes, or toggles status
 
 ### Validation errors (422)
 

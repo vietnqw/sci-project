@@ -1,11 +1,11 @@
-## SCI Backend API — Authentication and Users
+# SCI Backend API — Authentication and Users
 
 - Base URL prefix: `/api/v1`
 - Authentication: Bearer JWT in the `Authorization` header
   - Example: `Authorization: Bearer <JWT>`
 - Roles: `ADMIN`, `CREATOR`
 
-### Authentication
+## Authentication
 
 - POST `/auth/login`
   - Purpose: Obtain a JWT for subsequent authenticated requests
@@ -40,7 +40,7 @@ curl -X GET \
   -H 'Authorization: Bearer <JWT>'
 ```
 
-### Users
+## Users
 
 - POST `/users` (Register)
   - Purpose: Create a new user account
@@ -196,3 +196,152 @@ curl -X DELETE \
   - Passwords must be strong (min 8, upper+lower+digit)
   - Phone numbers must be valid E.164 format (10–16 digits)
   - Unknown fields in requests are rejected
+
+## Competitions
+
+- Base path: `/competitions`
+
+- GET `/competitions`
+  - Purpose: Public listing of competitions with filters and pagination
+  - Permissions: Anyone; if Authorization provided and admin, can filter by `owner_id`
+  - Query params: from `CompetitionFilterParams`
+    - `skip`, `limit`, `location`, `format`, `scale`, `is_active`, `is_featured`, `search`
+    - `owner_id` (UUID): admin-only; otherwise `COMPETITION_002`
+  - 200 Response (JSON):
+    - `competitions` (array of `CompetitionResponse`)
+    - `total` (int)
+  - Example:
+```bash
+curl -X GET 'http://localhost:8000/api/v1/competitions?skip=0&limit=10&format=ONLINE&search=junior'
+```
+
+- GET `/competitions/{user_id}`
+  - Purpose: List competitions for a specific user
+  - Permissions: Admin can list any; non-admins only themselves
+  - 200 Response (JSON):
+    - `competitions` (array of `CompetitionResponse`)
+    - `total` (int)
+  - Example:
+```bash
+curl -X GET 'http://localhost:8000/api/v1/competitions/<USER_ID>' -H 'Authorization: Bearer <JWT>'
+```
+
+- GET `/competitions/detail/{competition_id}`
+  - Purpose: Get a competition detail
+  - Permissions: Public
+  - 200 Response (JSON): `CompetitionResponse`
+  - 404: `COMPETITION_001` if not found
+  - Example:
+```bash
+curl -X GET 'http://localhost:8000/api/v1/competitions/detail/<COMPETITION_ID>'
+```
+
+- POST `/competitions`
+  - Purpose: Create a new competition owned by the current user
+  - Permissions: Authenticated users
+  - Body: `CompetitionCreate`
+  - 201 Response (JSON): `CompetitionResponse`
+  - Example:
+```bash
+curl -X POST 'http://localhost:8000/api/v1/competitions' \
+  -H 'Authorization: Bearer <JWT>' -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Junior Science Fair",
+    "description": "A friendly fair.",
+    "registration_deadline": "2025-10-30T12:00:00Z",
+    "format": "ONLINE",
+    "scale": "REGIONAL"
+  }'
+```
+
+- PUT `/competitions/{competition_id}`
+  - Purpose: Update competition information
+  - Permissions: Owner or Admin
+  - Body: `CompetitionUpdate`
+  - 200 Response (JSON): `CompetitionResponse`
+  - 403: `COMPETITION_003` if not owner/admin
+  - Example:
+```bash
+curl -X PUT 'http://localhost:8000/api/v1/competitions/<COMPETITION_ID>' \
+  -H 'Authorization: Bearer <JWT>' -H 'Content-Type: application/json' \
+  -d '{ "description": "Updated" }'
+```
+
+- PUT `/competitions/{competition_id}/status/active`
+  - Purpose: Toggle `is_active`
+  - Permissions: Owner or Admin
+  - Body: `{ "is_active": boolean }`
+  - 204 Response (No Content)
+  - Example:
+```bash
+curl -X PUT 'http://localhost:8000/api/v1/competitions/<COMPETITION_ID>/status/active' \
+  -H 'Authorization: Bearer <JWT>' -H 'Content-Type: application/json' \
+  -d '{ "is_active": false }'
+```
+
+- PUT `/competitions/{competition_id}/status/featured`
+  - Purpose: Toggle `is_featured`
+  - Permissions: Admin only
+  - Body: `{ "is_featured": boolean }`
+  - 204 Response (No Content)
+  - Example:
+```bash
+curl -X PUT 'http://localhost:8000/api/v1/competitions/<COMPETITION_ID>/status/featured' \
+  -H 'Authorization: Bearer <ADMIN_JWT>' -H 'Content-Type: application/json' \
+  -d '{ "is_featured": true }'
+```
+
+- DELETE `/competitions/{competition_id}`
+  - Purpose: Delete a competition
+  - Permissions: Owner or Admin
+  - 204 Response (No Content)
+  - Example:
+```bash
+curl -X DELETE 'http://localhost:8000/api/v1/competitions/<COMPETITION_ID>' \
+  -H 'Authorization: Bearer <JWT>'
+```
+
+### Schema reference
+
+- CompetitionResponse
+```json
+{
+  "id": "uuid",
+  "title": "Junior Science Fair",
+  "description": "A friendly fair.",
+  "competition_link": "https://example.org/competitions/junior-science-fair",
+  "registration_deadline": "2025-10-30T12:00:00Z",
+  "background_image_url": "https://example.org/images/bg.png",
+  "detail_image_urls": [
+    "https://example.org/images/detail1.png",
+    "https://example.org/images/detail2.png"
+  ],
+  "location": "Hanoi",
+  "format": "ONLINE",
+  "scale": "REGIONAL",
+  "owner_id": "uuid",
+  "is_active": true,
+  "is_featured": false,
+  "created_at": "2025-10-01T12:00:00Z",
+  "updated_at": "2025-10-01T12:00:00Z"
+}
+```
+
+- CompetitionList
+```json
+{
+  "competitions": [ /* array of CompetitionResponse */ ],
+  "total": 1
+}
+```
+
+### Notes
+
+- Validation
+  - `registration_deadline` must be timezone-aware (e.g., `...Z`)
+  - `format` is one of: `ONLINE`, `OFFLINE`, `HYBRID`
+  - `scale` is one of: `PROVINCIAL`, `REGIONAL`, `INTERNATIONAL`
+  - Unknown fields in requests are rejected
+- Permissions
+  - `owner_id` filter in GET `/competitions` is admin-only
+  - Default ordering for listings: newest first (`created_at` DESC)

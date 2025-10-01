@@ -86,6 +86,29 @@ class DuplicateUserError(ConflictError):
     message = "Email already registered"
 
 
+# Competition-specific errors
+
+
+class CompetitionNotFoundError(ResourceNotFoundError):
+    code = "COMPETITION_001"
+    message = "Competition not found"
+
+
+class ForbiddenCompetitionOwnerFilterError(AuthorizationError):
+    code = "COMPETITION_002"
+    message = "Not allowed to filter competitions by owner_id"
+
+
+class ForbiddenCompetitionAccessError(AuthorizationError):
+    code = "COMPETITION_003"
+    message = "Not allowed to access or modify this competition"
+
+
+class InvalidCompetitionUpdateError(BadRequestError):
+    code = "COMPETITION_004"
+    message = "Invalid competition update payload"
+
+
 class RateLimitError(APIError):
     http_status = 429
     code = "RATE_001"

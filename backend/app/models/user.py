@@ -2,6 +2,7 @@ from enum import Enum as PyEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, Enum as SAEnum, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -30,6 +31,13 @@ class User(Base):
     is_active = Column(Boolean(), nullable=False, default=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    # Relationships
+    competitions = relationship(
+        "Competition",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"

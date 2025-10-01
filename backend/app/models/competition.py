@@ -4,6 +4,7 @@ import json
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 
@@ -36,6 +37,9 @@ class Competition(Base):
     updated_at = Column(
         DateTime(timezone=True), default=func.now(), onupdate=func.now()
     )
+
+    # Relationship
+    owner = relationship("User", back_populates="competitions", foreign_keys=[owner_id])
 
     @property
     def detail_image_urls_list(self) -> list[str]:
