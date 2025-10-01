@@ -107,7 +107,19 @@ export async function apiRequest<T>(
       }
     }
 
-    return await response.json();
+    // Handle 204 No Content responses (no body to parse)
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    // Check if response has content before parsing JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    }
+
+    // For non-JSON responses, return empty object
+    return {} as T;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;

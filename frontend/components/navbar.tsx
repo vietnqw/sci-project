@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "../app/contexts/AuthContext";
-import ModeToggle from "./mode-toggle";
+// Mode toggle removed as user mode feature is deprecated
 
 const NAV_LINKS = [
   { name: "Home", href: "/" },
@@ -107,9 +107,7 @@ const Navbar = () => {
                     Account Dashboard
                   </Link>
 
-                  <div className="px-4 py-2 border-t border-gray-100">
-                    <ModeToggle />
-                  </div>
+                  {/* Mode toggle removed */}
 
                   <button
                     onClick={handleLogout}
@@ -173,9 +171,7 @@ const Navbar = () => {
                     Account Dashboard
                   </Link>
 
-                  <div className="px-4 py-2 border-t border-gray-100 mt-2 flex justify-center">
-                    <ModeToggle />
-                  </div>
+                  {/* Mode toggle removed */}
 
                   <button
                     onClick={() => {

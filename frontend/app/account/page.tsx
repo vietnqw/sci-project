@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import UserProfileForm from '../../components/user-profile-form';
 import { competitionsAPI, Competition } from '../api/competitions';
@@ -23,7 +23,11 @@ function Detail({ label, value }: { label: string; value: string }) {
 export default function AccountPage() {
   const { user, updateUser, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabKey>('profile');
+  const searchParams = useSearchParams();
+
+  // Get initial tab from URL or default to 'profile'
+  const tabFromUrl = (searchParams.get('tab') as TabKey) || 'profile';
+  const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [userCompetitions, setUserCompetitions] = useState<Competition[]>([]);
@@ -31,6 +35,11 @@ export default function AccountPage() {
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Competition filters and search
+  const [competitionSearch, setCompetitionSearch] = useState('');
+  const [competitionStatusFilter, setCompetitionStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [competitionSortBy, setCompetitionSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -46,17 +55,33 @@ export default function AccountPage() {
     }
   }, [user]);
 
+  // Sync activeTab with URL parameter
+  useEffect(() => {
+    const urlTab = (searchParams.get('tab') as TabKey) || 'profile';
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (user && activeTab === 'admin' && user.role !== 'ADMIN') {
-      setActiveTab('profile');
+      handleTabChange('profile');
     }
   }, [user, activeTab]);
+
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    // Update URL with the new tab parameter
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.push(`/account?${params.toString()}`, { scroll: false });
+  };
 
   const fetchUserCompetitions = async () => {
     if (!user) return;
     setIsLoadingCompetitions(true);
     try {
-      const response = await competitionsAPI.getMyCompetitions({ limit: 20 });
+      const response = await competitionsAPI.getMyCompetitions(user.id, { limit: 100 });
       setUserCompetitions(response.competitions || []);
     } catch (error) {
       console.error('Error fetching user competitions:', error);
@@ -65,6 +90,19 @@ export default function AccountPage() {
       setTimeout(() => setToast(null), 3000);
     } finally {
       setIsLoadingCompetitions(false);
+    }
+  };
+
+  const handleToggleActiveStatus = async (competitionId: string, currentStatus: boolean) => {
+    try {
+      await competitionsAPI.toggleCompetitionActiveStatus(competitionId, !currentStatus);
+      setToast({ type: 'success', message: `Competition ${!currentStatus ? 'activated' : 'deactivated'} successfully.` });
+      setTimeout(() => setToast(null), 2500);
+      await fetchUserCompetitions();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update competition status.';
+      setToast({ type: 'error', message });
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -154,6 +192,34 @@ export default function AccountPage() {
         { id: 'competitions', label: 'Competitions' },
       ];
 
+  // Filter and sort competitions
+  const filteredAndSortedCompetitions = userCompetitions
+    .filter(comp => {
+      // Search filter
+      const matchesSearch = !competitionSearch ||
+        comp.title.toLowerCase().includes(competitionSearch.toLowerCase()) ||
+        comp.location?.toLowerCase().includes(competitionSearch.toLowerCase());
+
+      // Status filter
+      const matchesStatus = competitionStatusFilter === 'all' ||
+        (competitionStatusFilter === 'active' && comp.is_active) ||
+        (competitionStatusFilter === 'inactive' && !comp.is_active);
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (competitionSortBy === 'newest') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      } else if (competitionSortBy === 'oldest') {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      } else {
+        return a.title.localeCompare(b.title);
+      }
+    });
+
+  const activeCompetitionsCount = userCompetitions.filter(c => c.is_active).length;
+  const inactiveCompetitionsCount = userCompetitions.filter(c => !c.is_active).length;
+
   const stats = [
     { label: 'Role', value: user.role === 'ADMIN' ? 'Administrator' : 'Creator' },
     { label: 'Created Competitions', value: userCompetitions.length },
@@ -217,7 +283,7 @@ export default function AccountPage() {
               {availableTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
                     activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
@@ -273,83 +339,266 @@ export default function AccountPage() {
             )}
 
             {activeTab === 'competitions' && (
-              <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">My Competitions</h2>
-                    <p className="text-sm text-gray-600">All competitions you have created.</p>
+              <div className="space-y-6">
+                {/* Statistics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-blue-100 text-sm font-medium">Total Competitions</p>
+                        <p className="text-3xl font-bold mt-1">{userCompetitions.length}</p>
+                      </div>
+                      <div className="bg-white/20 rounded-full p-3">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={fetchUserCompetitions}
-                      disabled={isLoadingCompetitions}
-                      className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      <svg className={`w-4 h-4 ${isLoadingCompetitions ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Refresh
-                    </button>
-                    <button
-                      onClick={handleNavigateToCreateCompetition}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      New Competition
-                    </button>
+
+                  <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-green-100 text-sm font-medium">Active</p>
+                        <p className="text-3xl font-bold mt-1">{activeCompetitionsCount}</p>
+                      </div>
+                      <div className="bg-white/20 rounded-full p-3">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-100 text-sm font-medium">Inactive</p>
+                        <p className="text-3xl font-bold mt-1">{inactiveCompetitionsCount}</p>
+                      </div>
+                      <div className="bg-white/20 rounded-full p-3">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {isLoadingCompetitions ? (
-                  <div className="py-12 text-center text-gray-500">Loading competitions...</div>
-                ) : userCompetitions.length > 0 ? (
-                  <div className="space-y-4">
-                    {userCompetitions.map((competition) => (
-                      <div key={competition.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-base font-semibold text-gray-900">{competition.title}</h3>
-                              <span className={`px-2 py-1 text-xs rounded-full ${competition.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                {competition.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-1">{competition.location}</p>
-                            <p className="text-sm text-gray-600 mb-1 capitalize">
-                              {competition.format} • {competition.scale.toLowerCase()}
-                            </p>
-                            {competition.registration_deadline && (
-                              <p className="text-xs text-gray-500">Registration closes on {new Date(competition.registration_deadline).toLocaleDateString()}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 text-sm">
-                            <Link href={`/competitions/${competition.id}`} className="text-blue-600 hover:text-blue-800 font-medium">
-                              View
-                            </Link>
-                            <button
-                              className="text-green-600 hover:text-green-800 font-medium cursor-pointer"
-                              onClick={() => router.push(`/competitions/${competition.id}/edit`)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="text-red-600 hover:text-red-800 font-medium cursor-pointer"
-                              onClick={() => handleDeleteCompetition(competition.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
+                {/* Main Competitions Section */}
+                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">Manage Competitions</h2>
+                      <p className="text-sm text-gray-600 mt-1">View, edit, and manage all your competitions</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={fetchUserCompetitions}
+                        disabled={isLoadingCompetitions}
+                        className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <svg className={`w-4 h-4 ${isLoadingCompetitions ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh
+                      </button>
+                      <button
+                        onClick={handleNavigateToCreateCompetition}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Competition
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Search and Filters */}
+                  {userCompetitions.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-200">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Search competitions..."
+                          value={competitionSearch}
+                          onChange={(e) => setCompetitionSearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors text-sm"
+                        />
+                      </div>
+
+                      <div className="relative">
+                        <select
+                          value={competitionStatusFilter}
+                          onChange={(e) => setCompetitionStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors appearance-none cursor-pointer text-sm bg-white"
+                        >
+                          <option value="all">All Status</option>
+                          <option value="active">Active Only</option>
+                          <option value="inactive">Inactive Only</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-12 text-center text-gray-500">
-                    You haven&apos;t created any competitions yet. Start by creating your first competition.
-                  </div>
-                )}
+
+                      <div className="relative">
+                        <select
+                          value={competitionSortBy}
+                          onChange={(e) => setCompetitionSortBy(e.target.value as 'newest' | 'oldest' | 'title')}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors appearance-none cursor-pointer text-sm bg-white"
+                        >
+                          <option value="newest">Newest First</option>
+                          <option value="oldest">Oldest First</option>
+                          <option value="title">Title (A-Z)</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Competitions List */}
+                  {isLoadingCompetitions ? (
+                    <div className="py-12 text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-500">Loading competitions...</p>
+                    </div>
+                  ) : filteredAndSortedCompetitions.length > 0 ? (
+                    <div className="space-y-3">
+                      {filteredAndSortedCompetitions.map((competition) => (
+                        <div key={competition.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-blue-300">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                    <h3 className="text-base font-semibold text-gray-900 truncate">{competition.title}</h3>
+                                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex-shrink-0 ${competition.is_active ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-gray-100 text-gray-700 ring-1 ring-gray-300'}`}>
+                                      {competition.is_active ? '● Active' : '○ Inactive'}
+                                    </span>
+                                    {competition.is_featured && (
+                                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700 ring-1 ring-yellow-300 flex-shrink-0">
+                                        ⭐ Featured
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 mb-2">
+                                    <span className="flex items-center gap-1">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      {competition.location}
+                                    </span>
+                                    <span className="capitalize">{competition.format?.toLowerCase() || 'N/A'}</span>
+                                    <span className="capitalize">{competition.scale?.toLowerCase() || 'N/A'}</span>
+                                  </div>
+                                  {competition.registration_deadline && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                      Registration deadline: {new Date(competition.registration_deadline).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Created {new Date(competition.created_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
+                              <button
+                                onClick={() => handleToggleActiveStatus(competition.id, competition.is_active)}
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+                                  competition.is_active
+                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                }`}
+                                title={competition.is_active ? 'Deactivate' : 'Activate'}
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={competition.is_active ? "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"} />
+                                </svg>
+                                {competition.is_active ? 'Deactivate' : 'Activate'}
+                              </button>
+                              <Link
+                                href={`/competitions/${competition.id}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View
+                              </Link>
+                              <button
+                                onClick={() => router.push(`/competitions/${competition.id}/edit`)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCompetition(competition.id)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : userCompetitions.length === 0 ? (
+                    <div className="py-16 text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No competitions yet</h3>
+                      <p className="text-gray-600 mb-6">You haven&apos;t created any competitions. Start by creating your first competition.</p>
+                      <button
+                        onClick={handleNavigateToCreateCompetition}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Create Your First Competition
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No competitions found</h3>
+                      <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -382,9 +631,9 @@ export default function AccountPage() {
                 </div>
 
                 <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm md:col-span-2">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Creator Assistance</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Management Assistance</h3>
                   <p className="text-sm text-gray-600">
-                    Switch to a creator&apos;s perspective whenever you need to troubleshoot or update their competitions and profile settings.
+                    Switch between user perspectives when you need to troubleshoot or update competitions and profile settings.
                   </p>
                 </div>
               </div>

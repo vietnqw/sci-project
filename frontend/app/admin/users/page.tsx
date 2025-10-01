@@ -346,10 +346,7 @@ export default function AdminUsersPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            color={userItem.role === 'ADMIN' ? 'purple' : 'blue'}
-                            label={userItem.role === 'ADMIN' ? 'Admin' : 'Creator'}
-                          />
+                            <Badge color={userItem.role === 'ADMIN' ? 'purple' : 'blue'} label={userItem.role === 'ADMIN' ? 'Admin' : 'Creator'} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
@@ -607,7 +604,7 @@ function UserDetailModal({ user, isOpen, onClose, onUpdate }: DetailModalProps) 
               />
             </FormField>
             <FormField label="Role">
-              <Badge color={user.role === 'ADMIN' ? 'purple' : 'blue'} label={user.role === 'ADMIN' ? 'Admin' : 'Creator'} />
+              <Badge color={user.role === 'ADMIN' ? 'purple' : 'blue'} label={user.role === 'ADMIN' ? 'Admin' : 'User'} />
             </FormField>
             <FormField label="Status">
               <Badge color={user.is_active ? 'green' : 'red'} label={user.is_active ? 'Active' : 'Inactive'} />

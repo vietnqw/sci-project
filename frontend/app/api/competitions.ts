@@ -148,7 +148,7 @@ class CompetitionsAPI {
     });
   }
 
-  async getMyCompetitions(params?: { skip?: number; limit?: number; }): Promise<CompetitionListResponse> {
+  async getMyCompetitions(userId: string, params?: { skip?: number; limit?: number; }): Promise<CompetitionListResponse> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -158,8 +158,16 @@ class CompetitionsAPI {
       });
     }
     const queryString = searchParams.toString();
-    const endpoint = `/api/v1/competitions/my/competitions${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/v1/competitions/${userId}${queryString ? `?${queryString}` : ''}`;
     return apiRequest<CompetitionListResponse>(endpoint, { requireAuth: true });
+  }
+
+  async toggleCompetitionActiveStatus(id: string, isActive: boolean): Promise<void> {
+    return apiRequest<void>(`/api/v1/competitions/${id}/status/active`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: isActive }),
+      requireAuth: true,
+    });
   }
 
   async getPendingCompetitions(params?: { skip?: number; limit?: number; }): Promise<CompetitionListResponse> {
