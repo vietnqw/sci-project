@@ -24,3 +24,184 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* === Custom utilities from old frontend (for homepage parity) === */
+/* Custom animations for carousel */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
+.animate-pause {
+  animation-play-state: paused;
+}
+
+/* Progress indicator animation */
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress linear;
+  will-change: width;
+}
+
+/* Smooth carousel transitions */
+.carousel-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  /* Hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+/* Hide scrollbar for WebKit browsers */
+.carousel-smooth::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced hover effects */
+.carousel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-hover:hover {
+  transform: scale(1.02);
+}
+
+/* Smooth fade transitions */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth slide transitions */
+.slide-transition {
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced button hover effects */
+.button-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-smooth:hover {
+  transform: scale(1.05);
+}
+
+.button-smooth:active {
+  transform: scale(0.95);
+}
+
+/* Smooth text animations */
+.text-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced progress bar glow effect */
+.progress-glow {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Smooth scale animations */
+.scale-smooth {
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced backdrop blur */
+.backdrop-blur-enhanced {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Clickable carousel cards */
+.carousel-card-clickable {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-card-clickable:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.carousel-card-clickable:active {
+  transform: scale(0.98);
+}
+
+/* Enhanced focus states for accessibility */
+.carousel-card-clickable:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-blue-400::-webkit-scrollbar-thumb {
+  background-color: #60a5fa;
+  border-radius: 8px;
+}
+
+.scrollbar-track-blue-100::-webkit-scrollbar-track {
+  background-color: #dbeafe;
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #dbeafe;
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #60a5fa;
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
