@@ -11,9 +11,21 @@
    - `source .venv/bin/activate`
 
 ### Migrations
-- If your Postgres instance doesn't have the target database yet, create it (reads credentials from `../.env`):
+
+**Using database management utils:**
+To quickly create or drop the database:
+- To create the database (reads credentials from `../.env`):
   - `uv run python scripts/manage_database.py create --db <db_name>`
-  - To drop the database (dangerous): `uv run python scripts/manage_database.py drop --db <db_name>`
+- To drop the database (dangerous!):
+  - `uv run python scripts/manage_database.py drop --db <db_name>`
+
+To quickly create or drop initial admin user:
+- To create the admin user (reads credentials from `../.env`):
+  - `uv run python scripts/manage_database.py create --admin-user`
+- To remove the admin user:
+  - `uv run python scripts/manage_database.py drop --admin-user`
+
+**Perform migrations:**
 - Run migrations:
   - `uv run alembic upgrade head`
 - Create a new migration:

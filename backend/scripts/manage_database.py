@@ -6,10 +6,10 @@ loads environment variables from the top-level .env file one directory above
 `backend/`).
 
 Usage:
-  uv run python scripts/manage_database.py create [--db DBNAME]
-  uv run python scripts/manage_database.py drop [--db DBNAME]
-  uv run python scripts/manage_database.py create-admin
-  uv run python scripts/manage_database.py remove-admin
+  uv run python scripts/manage_database.py create --db [DBNAME]
+  uv run python scripts/manage_database.py drop --db [DBNAME]
+  uv run python scripts/manage_database.py create --admin-user
+  uv run python scripts/manage_database.py drop --admin-user
 
 Environment:
   POSTGRES_ADMIN_DB: admin database name (default: "postgres")
@@ -89,14 +89,37 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Manage PostgreSQL database")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    create_parser = subparsers.add_parser("create", help="Create database if missing")
-    create_parser.add_argument("--db", dest="db_name", default=None)
+    create_parser = subparsers.add_parser(
+        "create", help="Create database or admin user"
+    )
+    create_group = create_parser.add_mutually_exclusive_group(required=True)
+    create_group.add_argument(
+        "--db",
+        dest="db_name",
+        nargs="?",
+        const=None,
+        help="Create database (optionally specify name)",
+    )
+    create_group.add_argument(
+        "--admin-user",
+        action="store_true",
+        help="Create admin user from environment variables",
+    )
 
-    drop_parser = subparsers.add_parser("drop", help="Drop database if exists")
-    drop_parser.add_argument("--db", dest="db_name", default=None)
-
-    subparsers.add_parser("create-admin", help="Create initial admin user from env")
-    subparsers.add_parser("remove-admin", help="Remove initial admin user from env")
+    drop_parser = subparsers.add_parser("drop", help="Drop database or admin user")
+    drop_group = drop_parser.add_mutually_exclusive_group(required=True)
+    drop_group.add_argument(
+        "--db",
+        dest="db_name",
+        nargs="?",
+        const=None,
+        help="Drop database (optionally specify name)",
+    )
+    drop_group.add_argument(
+        "--admin-user",
+        action="store_true",
+        help="Remove admin user from environment variables",
+    )
 
     return parser.parse_args()
 
@@ -171,12 +194,12 @@ def main() -> int:
     args = parse_args()
 
     # Admin user operations do not require admin DB connection
-    if args.command in ("create-admin", "remove-admin"):
+    if hasattr(args, "admin_user") and args.admin_user:
         db_url = settings.POSTGRES_URL_SYNC
         print(f"Connecting to application database for admin ops: {db_url}")
         try:
             with SessionLocalSync() as session:  # type: ignore[attr-defined]
-                if args.command == "create-admin":
+                if args.command == "create":
                     return create_admin_user(session)
                 else:
                     return remove_admin_user(session)
