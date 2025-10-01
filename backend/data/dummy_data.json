@@ -1,0 +1,226 @@
+{
+  "users": [
+    {
+      "email": "user1@example.com",
+      "full_name": "User One",
+      "phone_number": "+14155550101",
+      "organization": "Org One",
+      "password": "Passw0rdA!"
+    },
+    {
+      "email": "user2@example.com",
+      "full_name": "User Two",
+      "phone_number": "+14155550102",
+      "organization": "Org Two",
+      "password": "Passw0rdB!"
+    },
+    {
+      "email": "user3@example.com",
+      "full_name": "User Three",
+      "phone_number": "+14155550103",
+      "organization": "Org Three",
+      "password": "Passw0rdC!"
+    },
+    {
+      "email": "user4@example.com",
+      "full_name": "User Four",
+      "phone_number": "+14155550104",
+      "organization": "Org Four",
+      "password": "Passw0rdD!"
+    }
+  ],
+  "competitions": [
+    {
+      "title": "Junior Science Fair",
+      "description": "A friendly science fair for junior students.",
+      "competition_link": "https://example.org/competitions/junior-science-fair",
+      "registration_deadline": "2030-01-15T12:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/8028412/pexels-photo-8028412.jpeg?_gl=1*r02ff9*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMDIkajUzJGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/8028331/pexels-photo-8028331.jpeg?_gl=1*1s5uvff*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMjEkajM0JGwwJGgw", "https://images.pexels.com/photos/32963718/pexels-photo-32963718.jpeg?_gl=1*16bfdoe*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMzkkajE2JGwwJGgw"],
+      "location": "Hanoi",
+      "format": "ONLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user1@example.com"
+    },
+    {
+      "title": "Robotics Challenge 2025",
+      "description": "Build and compete with robots.",
+      "competition_link": "https://example.org/competitions/robotics-challenge",
+      "registration_deadline": "2030-02-20T09:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/8028331/pexels-photo-8028331.jpeg?_gl=1*1s5uvff*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMjEkajM0JGwwJGgw",
+      "detail_image_urls": [],
+      "location": "Da Nang",
+      "format": "OFFLINE",
+      "scale": "INTERNATIONAL",
+      "owner_email": "user1@example.com"
+    },
+    {
+      "title": "Math Olympiad Qualifiers",
+      "description": "Qualifying round for math olympiad.",
+      "competition_link": "https://example.org/competitions/math-qualifiers",
+      "registration_deadline": "2030-03-01T18:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/32963718/pexels-photo-32963718.jpeg?_gl=1*16bfdoe*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMzkkajE2JGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/31042089/pexels-photo-31042089.jpeg?_gl=1*1g2gkvw*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNDkkajYkbDAkaDA.", "https://images.pexels.com/photos/15845012/pexels-photo-15845012.jpeg?_gl=1*837jlp*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNTUkajYwJGwwJGgw", "https://images.pexels.com/photos/6364228/pexels-photo-6364228.jpeg?_gl=1*1vsr9kd*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjAkajU1JGwwJGgw"],
+      "location": "Ho Chi Minh City",
+      "format": "HYBRID",
+      "scale": "PROVINCIAL",
+      "owner_email": "user1@example.com"
+    },
+    {
+      "title": "AI Innovation Sprint",
+      "description": "48-hour AI project sprint.",
+      "competition_link": "https://example.org/competitions/ai-sprint",
+      "registration_deadline": "2030-04-10T10:30:00Z",
+      "background_image_url": "https://images.pexels.com/photos/31042089/pexels-photo-31042089.jpeg?_gl=1*1g2gkvw*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNDkkajYkbDAkaDA.",
+      "detail_image_urls": ["https://images.pexels.com/photos/17194635/pexels-photo-17194635.jpeg?_gl=1*arnnbr*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjUkajUwJGwwJGgw"],
+      "location": "Hue",
+      "format": "ONLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Chemistry Lab Masters",
+      "description": "Hands-on lab competition.",
+      "competition_link": "https://example.org/competitions/chem-lab",
+      "registration_deadline": "2030-05-05T14:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/15845012/pexels-photo-15845012.jpeg?_gl=1*837jlp*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNTUkajYwJGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/4235364/pexels-photo-4235364.jpeg?_gl=1*1ovrx75*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjkkajQ2JGwwJGgw", "https://images.pexels.com/photos/34103472/pexels-photo-34103472.jpeg?_gl=1*1qy5y6c*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNzckajM4JGwwJGgw", "https://images.pexels.com/photos/34104302/pexels-photo-34104302.jpeg?_gl=1*s172p5*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyODIkajMzJGwwJGgw", "https://images.pexels.com/photos/34106346/pexels-photo-34106346.jpeg?_gl=1*6picrb*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyODgkajI3JGwwJGgw"],
+      "location": "Can Tho",
+      "format": "OFFLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Environmental Solutions Cup",
+      "description": "Propose environmental solutions.",
+      "competition_link": "https://example.org/competitions/env-cup",
+      "registration_deadline": "2030-06-12T08:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/6364228/pexels-photo-6364228.jpeg?_gl=1*1vsr9kd*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjAkajU1JGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/34106296/pexels-photo-34106296.jpeg?_gl=1*1oh97dy*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDQkajExJGwwJGgw"],
+      "location": "Hanoi",
+      "format": "HYBRID",
+      "scale": "INTERNATIONAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Data Science Hackfest",
+      "description": "Data challenges for teams.",
+      "competition_link": "https://example.org/competitions/ds-hackfest",
+      "registration_deadline": "2030-07-01T16:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/17194635/pexels-photo-17194635.jpeg?_gl=1*arnnbr*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjUkajUwJGwwJGgw",
+      "detail_image_urls": [],
+      "location": "Nha Trang",
+      "format": "ONLINE",
+      "scale": "PROVINCIAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Physics Tournament",
+      "description": "Solve physics problems.",
+      "competition_link": "https://example.org/competitions/physics-tournament",
+      "registration_deadline": "2030-08-15T11:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/4235364/pexels-photo-4235364.jpeg?_gl=1*1ovrx75*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjkkajQ2JGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/34106283/pexels-photo-34106283.jpeg?_gl=1*15jg3q0*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDgkajckbDAkaDA", "https://images.pexels.com/photos/34106289/pexels-photo-34106289.jpeg?_gl=1*3q9ofs*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMjgkajYwJGwwJGgw"],
+      "location": "Hai Phong",
+      "format": "OFFLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Bio Research Showcase",
+      "description": "Present biology research.",
+      "competition_link": "https://example.org/competitions/bio-showcase",
+      "registration_deadline": "2030-09-20T13:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34103472/pexels-photo-34103472.jpeg?_gl=1*1qy5y6c*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNzckajM4JGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/34028332/pexels-photo-34028332.jpeg?_gl=1*dosjzy*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTk0MzMkajU1JGwwJGgw"],
+      "location": "Hanoi",
+      "format": "ONLINE",
+      "scale": "INTERNATIONAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Cybersecurity CTF",
+      "description": "Capture the flag challenges.",
+      "competition_link": "https://example.org/competitions/ctf",
+      "registration_deadline": "2030-10-01T20:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34104302/pexels-photo-34104302.jpeg?_gl=1*s172p5*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyODIkajMzJGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/8028412/pexels-photo-8028412.jpeg?_gl=1*r02ff9*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMDIkajUzJGwwJGgw", "https://images.pexels.com/photos/8028331/pexels-photo-8028331.jpeg?_gl=1*1s5uvff*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMjEkajM0JGwwJGgw", "https://images.pexels.com/photos/32963718/pexels-photo-32963718.jpeg?_gl=1*16bfdoe*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMzkkajE2JGwwJGgw"],
+      "location": "Ho Chi Minh City",
+      "format": "HYBRID",
+      "scale": "PROVINCIAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Astronomy Night Quest",
+      "description": "Observe and analyze the night sky.",
+      "competition_link": "https://example.org/competitions/astro-night",
+      "registration_deadline": "2030-11-11T21:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34106346/pexels-photo-34106346.jpeg?_gl=1*6picrb*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyODgkajI3JGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/31042089/pexels-photo-31042089.jpeg?_gl=1*1g2gkvw*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNDkkajYkbDAkaDA.", "https://images.pexels.com/photos/15845012/pexels-photo-15845012.jpeg?_gl=1*837jlp*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNTUkajYwJGwwJGgw", "https://images.pexels.com/photos/6364228/pexels-photo-6364228.jpeg?_gl=1*1vsr9kd*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjAkajU1JGwwJGgw", "https://images.pexels.com/photos/17194635/pexels-photo-17194635.jpeg?_gl=1*arnnbr*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjUkajUwJGwwJGgw"],
+      "location": "Da Lat",
+      "format": "OFFLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user2@example.com"
+    },
+    {
+      "title": "Innovators Pitch Day",
+      "description": "Pitch innovative ideas.",
+      "competition_link": "https://example.org/competitions/pitch-day",
+      "registration_deadline": "2030-12-05T10:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34106296/pexels-photo-34106296.jpeg?_gl=1*1oh97dy*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDQkajExJGwwJGgw",
+      "detail_image_urls": [],
+      "location": "Hanoi",
+      "format": "ONLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user3@example.com"
+    },
+    {
+      "title": "Green Tech Marathon",
+      "description": "Sustainable technology marathon.",
+      "competition_link": "https://example.org/competitions/green-tech",
+      "registration_deadline": "2031-01-10T09:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34106283/pexels-photo-34106283.jpeg?_gl=1*15jg3q0*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDgkajckbDAkaDA",
+      "detail_image_urls": ["https://images.pexels.com/photos/4235364/pexels-photo-4235364.jpeg?_gl=1*1ovrx75*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNjkkajQ2JGwwJGgw"],
+      "location": "Hue",
+      "format": "HYBRID",
+      "scale": "INTERNATIONAL",
+      "owner_email": "user3@example.com"
+    },
+    {
+      "title": "Quantum Computing Jam",
+      "description": "Experiment with quantum algorithms.",
+      "competition_link": "https://example.org/competitions/quantum-jam",
+      "registration_deadline": "2031-02-20T12:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34106289/pexels-photo-34106289.jpeg?_gl=1*3q9ofs*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMjgkajYwJGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/34103472/pexels-photo-34103472.jpeg?_gl=1*1qy5y6c*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyNzckajM4JGwwJGgw", "https://images.pexels.com/photos/34104302/pexels-photo-34104302.jpeg?_gl=1*s172p5*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyODIkajMzJGwwJGgw"],
+      "location": "Hanoi",
+      "format": "OFFLINE",
+      "scale": "PROVINCIAL",
+      "owner_email": "user3@example.com"
+    },
+    {
+      "title": "Maritime Engineering Cup",
+      "description": "Marine engineering challenges.",
+      "competition_link": "https://example.org/competitions/maritime-cup",
+      "registration_deadline": "2031-03-15T12:30:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34028332/pexels-photo-34028332.jpeg?_gl=1*dosjzy*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTk0MzMkajU1JGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/34106346/pexels-photo-34106346.jpeg?_gl=1*6picrb*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyODgkajI3JGwwJGgw", "https://images.pexels.com/photos/34106296/pexels-photo-34106296.jpeg?_gl=1*1oh97dy*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDQkajExJGwwJGgw", "https://images.pexels.com/photos/34106283/pexels-photo-34106283.jpeg?_gl=1*15jg3q0*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDgkajckbDAkaDA"],
+      "location": "Hai Phong",
+      "format": "ONLINE",
+      "scale": "REGIONAL",
+      "owner_email": "user3@example.com"
+    },
+    {
+      "title": "STEM Teachers Showcase",
+      "description": "Showcase projects by STEM teachers.",
+      "competition_link": "https://example.org/competitions/stem-teachers",
+      "registration_deadline": "2031-04-01T08:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/34106283/pexels-photo-34106283.jpeg?_gl=1*15jg3q0*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMDgkajckbDAkaDA",
+      "detail_image_urls": ["https://images.pexels.com/photos/34106289/pexels-photo-34106289.jpeg?_gl=1*3q9ofs*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkzMjgkajYwJGwwJGgw", "https://images.pexels.com/photos/34028332/pexels-photo-34028332.jpeg?_gl=1*dosjzy*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTk0MzMkajU1JGwwJGgw"],
+      "location": "Hanoi",
+      "format": "HYBRID",
+      "scale": "INTERNATIONAL",
+      "owner_email": "user3@example.com"
+    }
+  ]
+}

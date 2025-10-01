@@ -10,6 +10,7 @@ Usage:
   uv run python scripts/manage_database.py drop --db [DBNAME]
   uv run python scripts/manage_database.py create --admin-user
   uv run python scripts/manage_database.py drop --admin-user
+  uv run python scripts/manage_database.py create --dummy-data [--file backend/data/dummy_data.json]
 
 Environment:
   POSTGRES_ADMIN_DB: admin database name (default: "postgres")
@@ -17,6 +18,7 @@ Environment:
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -28,6 +30,7 @@ from sqlalchemy.orm import Session as SyncSession
 from app.config.database import SessionLocalSync
 from app.core.security import hash_password
 from app.models.user import User, UserRole
+from app.models.competition import Competition
 
 from app.config.settings import settings
 
@@ -105,6 +108,17 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Create admin user from environment variables",
     )
+    create_group.add_argument(
+        "--dummy-data",
+        action="store_true",
+        help="Load dummy data from JSON file",
+    )
+    create_parser.add_argument(
+        "--file",
+        dest="dummy_file",
+        default="data/dummy_data.json",
+        help="Path to dummy data JSON file",
+    )
 
     drop_parser = subparsers.add_parser("drop", help="Drop database or admin user")
     drop_group = drop_parser.add_mutually_exclusive_group(required=True)
@@ -170,6 +184,83 @@ def create_admin_user(session: SyncSession) -> int:
     return 0
 
 
+def _load_json(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_dummy_data(session: SyncSession, path: str) -> int:
+    try:
+        data = _load_json(path)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Failed to read dummy data file '{path}': {exc}")
+        return 2
+
+    users = data.get("users", [])
+    comps = data.get("competitions", [])
+
+    # Create users if not exist
+    email_to_user: dict[str, User] = {}
+    for ud in users:
+        email = str(ud["email"]).strip().lower()
+        existing = session.execute(
+            select(User).where(User.email == email)
+        ).scalar_one_or_none()
+        if existing is None:
+            user = User(
+                email=email,
+                full_name=str(ud["full_name"]),
+                phone_number=str(ud["phone_number"]),
+                organization=str(ud["organization"]),
+                hashed_password=hash_password(str(ud["password"])),
+                role=UserRole.CREATOR,
+                is_active=True,
+            )
+            session.add(user)
+            session.flush()
+            email_to_user[email] = user
+        else:
+            email_to_user[email] = existing
+
+    # Create competitions
+    created = 0
+    for cd in comps:
+        owner_email = str(cd.get("owner_email", "")).strip().lower()
+        owner = email_to_user.get(owner_email)
+        if owner is None:
+            print(
+                f"Warning: owner '{owner_email}' not found for competition '{cd.get('title')}', skipping"
+            )
+            continue
+        comp = Competition(
+            title=str(cd["title"]),
+            description=cd.get("description"),
+            competition_link=cd.get("competition_link"),
+            registration_deadline=str(
+                cd.get("registration_deadline")
+            ),  # SQLAlchemy will parse ISO string
+            background_image_url=cd.get("background_image_url"),
+            location=cd.get("location"),
+            format=cd.get("format"),
+            scale=cd.get("scale"),
+            owner_id=owner.id,
+            is_active=True,
+            is_featured=False,
+        )
+        # detail images
+        if cd.get("detail_image_urls"):
+            try:
+                comp.detail_image_urls_list = list(cd["detail_image_urls"])  # type: ignore[assignment]
+            except Exception:
+                pass
+        session.add(comp)
+        created += 1
+
+    session.commit()
+    print(f"Loaded dummy data: {len(email_to_user)} users, {created} competitions")
+    return 0
+
+
 def remove_admin_user(session: SyncSession) -> int:
     ok, msg = _admin_env_ok()
     if not ok:
@@ -193,7 +284,7 @@ def remove_admin_user(session: SyncSession) -> int:
 def main() -> int:
     args = parse_args()
 
-    # Admin user operations do not require admin DB connection
+    # Admin user / dummy data operations do not require admin DB connection
     if hasattr(args, "admin_user") and args.admin_user:
         db_url = settings.POSTGRES_URL_SYNC
         print(f"Connecting to application database for admin ops: {db_url}")
@@ -205,6 +296,18 @@ def main() -> int:
                     return remove_admin_user(session)
         except Exception as exc:  # noqa: BLE001
             print(f"Admin operation failed: {exc}")
+            return 2
+
+    if hasattr(args, "dummy_data") and getattr(args, "dummy_data", False):
+        db_url = settings.POSTGRES_URL_SYNC
+        print(f"Connecting to application database to load dummy data: {db_url}")
+        try:
+            with SessionLocalSync() as session:  # type: ignore[attr-defined]
+                return load_dummy_data(
+                    session, getattr(args, "dummy_file", "backend/data/dummy_data.json")
+                )
+        except Exception as exc:  # noqa: BLE001
+            print(f"Dummy data operation failed: {exc}")
             return 2
 
     # Database create/drop operations below

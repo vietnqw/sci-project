@@ -92,14 +92,14 @@ class CompetitionsAPI {
     scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
     location?: string;
     search?: string;
-    sort_by?: 'created_at' | 'registration_deadline' | 'title';
-    order?: 'asc' | 'desc';
+    is_active?: boolean;
+    is_featured?: boolean;
   }): Promise<CompetitionListResponse> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
-          searchParams.append(key, value.toString());
+          searchParams.append(key, typeof value === 'boolean' ? String(value) : value.toString());
         }
       });
     }
@@ -110,29 +110,19 @@ class CompetitionsAPI {
     return apiRequest<CompetitionListResponse>(endpoint);
   }
 
-  async getFeaturedCompetitions(params?: {
-    skip?: number;
-    limit?: number;
-    sort_by?: 'created_at' | 'registration_deadline' | 'title';
-    order?: 'asc' | 'desc';
-  }): Promise<CompetitionListResponse> {
+  async getFeaturedCompetitions(params?: { skip?: number; limit?: number }): Promise<CompetitionListResponse> {
     const searchParams = new URLSearchParams();
+    searchParams.append('is_featured', 'true');
     if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          searchParams.append(key, value.toString());
-        }
-      });
+      if (params.skip !== undefined) searchParams.append('skip', String(params.skip));
+      if (params.limit !== undefined) searchParams.append('limit', String(params.limit));
     }
-
-    const queryString = searchParams.toString();
-    const endpoint = `/api/v1/competitions/featured${queryString ? `?${queryString}` : ''}`;
-
+    const endpoint = `/api/v1/competitions?${searchParams.toString()}`;
     return apiRequest<CompetitionListResponse>(endpoint);
   }
 
   async getCompetition(id: string): Promise<Competition> {
-    return apiRequest<Competition>(`/api/v1/competitions/${id}`);
+    return apiRequest<Competition>(`/api/v1/competitions/detail/${id}`);
   }
 
   async createCompetition(data: CompetitionCreate): Promise<Competition> {

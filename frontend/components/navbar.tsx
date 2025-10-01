@@ -84,7 +84,7 @@ const Navbar = () => {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={handleUserMenuToggle}
-                className="flex items-center gap-2 p-2 rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
+                className="flex items-center gap-2 p-2 rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors cursor-pointer"
                 aria-label="User menu"
                 aria-expanded={userMenuOpen}
               >
@@ -113,7 +113,7 @@ const Navbar = () => {
 
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
                   >
                     Sign Out
                   </button>
@@ -182,7 +182,7 @@ const Navbar = () => {
                       handleLogout();
                       handleClose();
                     }}
-                    className="block w-full text-center text-gray-700 hover:text-blue-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 px-4 py-2 rounded transition-colors"
+                    className="block w-full text-center text-gray-700 hover:text-blue-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 px-4 py-2 rounded transition-colors cursor-pointer"
                   >
                     Logout
                   </button>
