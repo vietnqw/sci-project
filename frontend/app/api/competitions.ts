@@ -40,48 +40,26 @@ export interface CompetitionListResponse {
 
 export interface CompetitionCreate {
   title: string;
-  introduction: string;
-  overview?: string;
-  question_type?: string;
-  selection_process?: string;
-  history?: string;
-  scoring_and_format?: string;
-  awards?: string;
-  penalties_and_bans?: string;
-  notable_achievements?: string;
+  description?: string;
   competition_link?: string;
-  background_image_url?: string;
-  detail_image_urls?: string[];
-  location: string;
-  format: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-  scale: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
-  registration_deadline: string;
-  size?: number;
-  target_age_min?: number;
-  target_age_max?: number;
-}
-
-export interface CompetitionUpdate {
-  title?: string;
-  introduction?: string;
-  overview?: string;
-  question_type?: string;
-  selection_process?: string;
-  history?: string;
-  scoring_and_format?: string;
-  awards?: string;
-  penalties_and_bans?: string;
-  notable_achievements?: string;
-  competition_link?: string;
+  registration_deadline?: string;
   background_image_url?: string;
   detail_image_urls?: string[];
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-  scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
+  scale?: 'REGIONAL' | 'INTERNATIONAL';
+}
+
+export interface CompetitionUpdate {
+  title?: string;
+  description?: string;
+  competition_link?: string;
   registration_deadline?: string;
-  size?: number;
-  target_age_min?: number;
-  target_age_max?: number;
+  background_image_url?: string;
+  detail_image_urls?: string[];
+  location?: string;
+  format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  scale?: 'REGIONAL' | 'INTERNATIONAL';
 }
 
 class CompetitionsAPI {

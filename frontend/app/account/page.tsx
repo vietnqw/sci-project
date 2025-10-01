@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import UserProfileForm from '../../components/user-profile-form';
+import CreateCompetitionModal from '../../components/create-competition-modal';
 import { competitionsAPI, Competition } from '../api/competitions';
 import { apiRequest, ApiError } from '../../lib/api/utils';
 import type { User } from '../../lib/api/auth';
@@ -40,6 +41,7 @@ export default function AccountPage() {
   const [competitionSearch, setCompetitionSearch] = useState('');
   const [competitionStatusFilter, setCompetitionStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [competitionSortBy, setCompetitionSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -162,8 +164,10 @@ export default function AccountPage() {
     router.push('/reset-password');
   };
 
-  const handleNavigateToCreateCompetition = () => {
-    router.push('/competitions/create');
+  const handleCreateCompetitionSuccess = async () => {
+    setToast({ type: 'success', message: 'Competition created successfully!' });
+    setTimeout(() => setToast(null), 3000);
+    await fetchUserCompetitions();
   };
 
   if (isAuthLoading) {
@@ -372,7 +376,7 @@ export default function AccountPage() {
 
                   <div className="bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between">
-                      <div>
+                  <div>
                         <p className="text-amber-50 text-sm font-medium">Featured</p>
                         <p className="text-3xl font-bold mt-1">{featuredCompetitionsCount}</p>
                       </div>
@@ -391,29 +395,29 @@ export default function AccountPage() {
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">Manage Competitions</h2>
                       <p className="text-sm text-gray-600 mt-1">View, edit, and manage all your competitions</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={fetchUserCompetitions}
-                        disabled={isLoadingCompetitions}
-                        className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        <svg className={`w-4 h-4 ${isLoadingCompetitions ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Refresh
-                      </button>
-                      <button
-                        onClick={handleNavigateToCreateCompetition}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        New Competition
-                      </button>
-                    </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={fetchUserCompetitions}
+                      disabled={isLoadingCompetitions}
+                      className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      <svg className={`w-4 h-4 ${isLoadingCompetitions ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh
+                    </button>
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      New Competition
+                    </button>
+                  </div>
+                </div>
 
                   {/* Search and Filters */}
                   {userCompetitions.length > 0 && (
@@ -470,7 +474,7 @@ export default function AccountPage() {
                   )}
 
                   {/* Competitions List */}
-                  {isLoadingCompetitions ? (
+                {isLoadingCompetitions ? (
                     <div className="py-12 text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                       <p className="text-gray-500">Loading competitions...</p>
@@ -501,7 +505,7 @@ export default function AccountPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                       </svg>
                                       {competition.location}
-                                    </span>
+                              </span>
                                     <span className="capitalize">{competition.format?.toLowerCase() || 'N/A'}</span>
                                     <span className="capitalize">{competition.scale?.toLowerCase() || 'N/A'}</span>
                                   </div>
@@ -543,31 +547,31 @@ export default function AccountPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
-                                View
-                              </Link>
-                              <button
-                                onClick={() => router.push(`/competitions/${competition.id}/edit`)}
+                              View
+                            </Link>
+                            <button
+                              onClick={() => router.push(`/competitions/${competition.id}/edit`)}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
-                              >
+                            >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCompetition(competition.id)}
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCompetition(competition.id)}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
-                              >
+                            >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
-                                Delete
-                              </button>
-                            </div>
+                              Delete
+                            </button>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                  </div>
                   ) : userCompetitions.length === 0 ? (
                     <div className="py-16 text-center">
                       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
@@ -578,7 +582,7 @@ export default function AccountPage() {
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">No competitions yet</h3>
                       <p className="text-gray-600 mb-6">You haven&apos;t created any competitions. Start by creating your first competition.</p>
                       <button
-                        onClick={handleNavigateToCreateCompetition}
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -596,8 +600,8 @@ export default function AccountPage() {
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">No competitions found</h3>
                       <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
-                    </div>
-                  )}
+                  </div>
+                )}
                 </div>
               </div>
             )}
@@ -641,6 +645,12 @@ export default function AccountPage() {
         onClose={() => setIsProfileFormOpen(false)}
         onUpdate={handleUpdateProfile}
         isLoading={isUpdatingProfile}
+      />
+
+      <CreateCompetitionModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleCreateCompetitionSuccess}
       />
     </main>
   );

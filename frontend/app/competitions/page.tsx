@@ -46,8 +46,8 @@ function mapCompetitionToDisplay(competition: AnyCompetition) {
     name: competition.title,
     overview: desc,
     scale: scaleRaw ? toTitle(scaleRaw) : "Unknown",
-    location: competition?.location || "TBD",
-    modes: formatRaw ? [toTitle(formatRaw)] : ["TBD"],
+    location: competition?.location || "Unknown",
+    modes: formatRaw ? [toTitle(formatRaw)] : ["Unknown"],
     homepage: competition?.competition_link || "#",
     image: imageUrl,
   };
