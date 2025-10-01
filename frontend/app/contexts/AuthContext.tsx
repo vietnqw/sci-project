@@ -71,6 +71,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('auth_token');
     }
     setUser(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const signup = async (email: string, password: string, fullName: string, organization: string, phoneNumber: string) => {
