@@ -58,6 +58,13 @@ class Settings(BaseSettings):
         description="Comma-separated list of allowed origins for CORS",
     )
 
+    # Initial admin bootstrap (manage_database.py)
+    ADMIN_EMAIL: str | None = None
+    ADMIN_PASSWORD: str | None = None
+    ADMIN_FULL_NAME: str | None = None
+    ADMIN_PHONE_NUMBER: str | None = None
+    ADMIN_ORGANIZATION: str | None = None
+
     @property
     def POSTGRES_URL(self) -> str:
         """Asynchronous PostgreSQL URL for SQLAlchemy"""

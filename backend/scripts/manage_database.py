@@ -8,6 +8,8 @@ loads environment variables from the top-level .env file one directory above
 Usage:
   uv run python scripts/manage_database.py create [--db DBNAME]
   uv run python scripts/manage_database.py drop [--db DBNAME]
+  uv run python scripts/manage_database.py create-admin
+  uv run python scripts/manage_database.py remove-admin
 
 Environment:
   POSTGRES_ADMIN_DB: admin database name (default: "postgres")
@@ -20,6 +22,12 @@ import sys
 
 import psycopg2
 from psycopg2 import sql
+from sqlalchemy import select
+from sqlalchemy.orm import Session as SyncSession
+
+from app.config.database import SessionLocalSync
+from app.core.security import hash_password
+from app.models.user import User, UserRole
 
 from app.config.settings import settings
 
@@ -87,12 +95,97 @@ def parse_args() -> argparse.Namespace:
     drop_parser = subparsers.add_parser("drop", help="Drop database if exists")
     drop_parser.add_argument("--db", dest="db_name", default=None)
 
+    subparsers.add_parser("create-admin", help="Create initial admin user from env")
+    subparsers.add_parser("remove-admin", help="Remove initial admin user from env")
+
     return parser.parse_args()
+
+
+def _admin_env_ok() -> tuple[bool, str]:
+    if not all(
+        [
+            settings.ADMIN_EMAIL,
+            settings.ADMIN_PASSWORD,
+            settings.ADMIN_FULL_NAME,
+            settings.ADMIN_PHONE_NUMBER,
+            settings.ADMIN_ORGANIZATION,
+        ]
+    ):
+        return (
+            False,
+            "Missing ADMIN_* environment variables. Please set ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_FULL_NAME, ADMIN_PHONE_NUMBER, ADMIN_ORGANIZATION.",
+        )
+    return True, ""
+
+
+def create_admin_user(session: SyncSession) -> int:
+    ok, msg = _admin_env_ok()
+    if not ok:
+        print(msg)
+        return 2
+
+    admin_email = str(settings.ADMIN_EMAIL)
+    existing = session.execute(
+        select(User).where(User.email == admin_email)
+    ).scalar_one_or_none()
+    if existing:
+        print(f"Admin user '{admin_email}' already exists. Nothing to do.")
+        return 0
+
+    user = User(
+        email=admin_email,
+        full_name=str(settings.ADMIN_FULL_NAME),
+        phone_number=str(settings.ADMIN_PHONE_NUMBER),
+        organization=str(settings.ADMIN_ORGANIZATION),
+        hashed_password=hash_password(str(settings.ADMIN_PASSWORD)),
+        role=UserRole.ADMIN,
+        is_active=True,
+    )
+    session.add(user)
+    session.commit()
+    print(f"Admin user '{admin_email}' created.")
+    return 0
+
+
+def remove_admin_user(session: SyncSession) -> int:
+    ok, msg = _admin_env_ok()
+    if not ok:
+        print(msg)
+        return 2
+
+    admin_email = str(settings.ADMIN_EMAIL)
+    existing = session.execute(
+        select(User).where(User.email == admin_email)
+    ).scalar_one_or_none()
+    if not existing:
+        print(f"Admin user '{admin_email}' does not exist. Nothing to do.")
+        return 0
+
+    session.delete(existing)
+    session.commit()
+    print(f"Admin user '{admin_email}' removed.")
+    return 0
 
 
 def main() -> int:
     args = parse_args()
-    target_db = args.db_name or settings.POSTGRES_DB
+
+    # Admin user operations do not require admin DB connection
+    if args.command in ("create-admin", "remove-admin"):
+        db_url = settings.POSTGRES_URL_SYNC
+        print(f"Connecting to application database for admin ops: {db_url}")
+        try:
+            with SessionLocalSync() as session:  # type: ignore[attr-defined]
+                if args.command == "create-admin":
+                    return create_admin_user(session)
+                else:
+                    return remove_admin_user(session)
+        except Exception as exc:  # noqa: BLE001
+            print(f"Admin operation failed: {exc}")
+            return 2
+
+    # Database create/drop operations below
+    target_db = getattr(args, "db_name", None) or settings.POSTGRES_DB
 
     print(
         f"Connecting to admin database '{get_admin_database_name()}' on host "

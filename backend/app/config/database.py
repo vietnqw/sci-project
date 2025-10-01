@@ -1,6 +1,8 @@
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy import create_engine as create_sync_engine
+from sqlalchemy.orm import sessionmaker as sync_sessionmaker
 from sqlalchemy.pool import NullPool
 
 from app.config.settings import settings
@@ -63,3 +65,8 @@ async def dispose_engine() -> None:
     except Exception as e:
         logger.error(f"Error disposing datbase engine: {e}")
         raise
+
+
+# Synchronous session factory for scripts (e.g., manage_database.py)
+_sync_engine = create_sync_engine(settings.POSTGRES_URL_SYNC)
+SessionLocalSync = sync_sessionmaker(bind=_sync_engine)
