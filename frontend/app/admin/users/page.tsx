@@ -136,7 +136,7 @@ export default function AdminUsersPage() {
       showToast('error', 'You cannot change your own role');
       return;
     }
-    const nextRole = userItem.role === 'ADMIN' ? 'CREATOR' : 'ADMIN';
+    const nextRole: 'ADMIN' | 'CREATOR' = userItem.role === 'ADMIN' ? 'CREATOR' : 'ADMIN';
     const currentRoleText = userItem.role === 'ADMIN' ? 'Admin' : 'Creator';
     const nextRoleText = nextRole === 'ADMIN' ? 'Admin' : 'Creator';
 
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
     setIsConfirmOpen(true);
   };
 
-  const handleChangeRoleConfirm = async (userItem: User, nextRole: string) => {
+  const handleChangeRoleConfirm = async (userItem: User, nextRole: 'ADMIN' | 'CREATOR') => {
     setIsActionLoading(true);
     try {
       await usersAPI.changeUserRole(userItem.id, nextRole);

@@ -95,7 +95,6 @@ export default function AccountPage() {
       updateUser(updatedUser);
       setToast({ type: 'success', message: 'Profile updated successfully!' });
       setTimeout(() => setToast(null), 2500);
-      return updatedUser;
     } catch (err) {
       const message = err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Failed to update profile';
       setToast({ type: 'error', message });
