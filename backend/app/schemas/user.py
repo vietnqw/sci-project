@@ -184,3 +184,13 @@ class UserFilterParams(BaseModel):
     search: str | None = Field(None, description="Search by name or email")
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+
+class UserSummary(BaseModel):
+    """Summary schema for user information in nested responses."""
+
+    id: UUID
+    full_name: str
+    email: str
+
+    model_config = ConfigDict(from_attributes=True)

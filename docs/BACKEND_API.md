@@ -202,10 +202,13 @@ curl -X DELETE \
 - Base path: `/competitions`
 
 - GET `/competitions`
-  - Purpose: Public listing of competitions with filters and pagination
-  - Permissions: Anyone; if Authorization provided and admin, can filter by `owner_id`
+  - Purpose: Listing of competitions with filters and pagination
+  - Permissions and visibility:
+    - Unauthenticated: only approved (`is_approved = true`)
+    - Authenticated non-admin: approved plus competitions owned by the user
+    - Admin: can see all; may filter by `owner_id`
   - Query params: from `CompetitionFilterParams`
-    - `skip`, `limit`, `location`, `format`, `scale`, `is_active`, `is_featured`, `search`
+    - `skip`, `limit`, `location`, `format`, `scale`, `is_active`, `is_featured`, `is_approved`, `is_rejected`, `search`
     - `owner_id` (UUID): admin-only; otherwise `COMPETITION_002`
   - 200 Response (JSON):
     - `competitions` (array of `CompetitionResponse`)
@@ -217,7 +220,7 @@ curl -X GET 'http://localhost:8000/api/v1/competitions?skip=0&limit=10&format=ON
 
 - GET `/competitions/{user_id}`
   - Purpose: List competitions for a specific user
-  - Permissions: Admin can list any; non-admins only themselves
+  - Permissions: Admin can list any; non-admins only themselves (else `COMPETITION_002`)
   - 200 Response (JSON):
     - `competitions` (array of `CompetitionResponse`)
     - `total` (int)
@@ -240,7 +243,7 @@ curl -X GET 'http://localhost:8000/api/v1/competitions/detail/<COMPETITION_ID>'
   - Purpose: Create a new competition owned by the current user
   - Permissions: Authenticated users
   - Body: `CompetitionCreate`
-  - 201 Response (JSON): `CompetitionResponse`
+  - 201 Response (JSON): `CompetitionResponse` (defaults `is_approved=false`, `is_rejected=false`, `rejection_reason=null`)
   - Example:
 ```bash
 curl -X POST 'http://localhost:8000/api/v1/competitions' \
@@ -301,6 +304,41 @@ curl -X DELETE 'http://localhost:8000/api/v1/competitions/<COMPETITION_ID>' \
   -H 'Authorization: Bearer <JWT>'
 ```
 
+### Admin-only competition management
+
+- GET `/competitions/admin/pending`
+  - Purpose: List competitions pending approval (not approved and not rejected)
+  - Permissions: Admin only
+  - Query params: same as `CompetitionFilterParams`
+  - 200 Response (JSON): `CompetitionList`
+
+- PUT `/competitions/admin/{competition_id}/approve`
+  - Purpose: Approve a competition
+  - Permissions: Admin only
+  - 200 Response (JSON): `{ "message": "Competition approved successfully" }`
+
+- PUT `/competitions/admin/{competition_id}/reject`
+  - Purpose: Reject a competition and optionally store a reason
+  - Permissions: Admin only
+  - Body (JSON): `{ "rejection_reason": string | null }`
+  - 200 Response (JSON): `{ "message": "Competition rejected successfully" }`
+
+- PUT `/competitions/admin/{competition_id}/feature`
+  - Purpose: Mark as featured
+  - Permissions: Admin only
+  - Body (JSON): `{ "is_featured": true }`
+  - 200 Response (JSON): `{ "message": "Competition featured successfully" }`
+
+- PUT `/competitions/admin/{competition_id}/unfeature`
+  - Purpose: Remove featured flag
+  - Permissions: Admin only
+  - 200 Response (JSON): `{ "message": "Competition unfeatured successfully" }`
+
+- PUT `/competitions/admin/{competition_id}/deactivate`
+  - Purpose: Deactivate a competition
+  - Permissions: Admin only
+  - 200 Response (JSON): `{ "message": "Competition deactivated successfully" }`
+
 ### Schema reference
 
 - CompetitionResponse
@@ -320,8 +358,12 @@ curl -X DELETE 'http://localhost:8000/api/v1/competitions/<COMPETITION_ID>' \
   "format": "ONLINE",
   "scale": "REGIONAL",
   "owner_id": "uuid",
+  "owner": { "id": "uuid", "full_name": "Jane Doe", "email": "jane@example.com" },
   "is_active": true,
   "is_featured": false,
+  "is_approved": false,
+  "is_rejected": false,
+  "rejection_reason": null,
   "created_at": "2025-10-01T12:00:00Z",
   "updated_at": "2025-10-01T12:00:00Z"
 }

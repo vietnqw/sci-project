@@ -31,6 +31,9 @@ class Competition(Base):
     )
     is_active = Column(Boolean(), nullable=False, default=True)
     is_featured = Column(Boolean(), nullable=False, default=False)
+    is_approved = Column(Boolean(), nullable=False, default=False)
+    is_rejected = Column(Boolean(), nullable=False, default=False)
+    rejection_reason = Column(String(1000), nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=func.now())

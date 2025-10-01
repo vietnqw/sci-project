@@ -14,7 +14,7 @@ from app.core.errors import (
     CompetitionNotFoundError,
 )
 from app.models.competition import Competition
-from app.models.user import UserRole
+from app.models.user import User, UserRole
 from app.schemas.competition import (
     CompetitionCreate,
     CompetitionFilterParams,
@@ -23,7 +23,9 @@ from app.schemas.competition import (
     CompetitionUpdate,
     CompetitionActiveUpdate,
     CompetitionFeaturedUpdate,
+    CompetitionRejectPayload,
 )
+from app.schemas.user import UserSummary
 
 
 router = APIRouter(prefix="/competitions", tags=["competitions"])
@@ -56,6 +58,21 @@ async def list_competitions(
     """
 
     conditions = []
+
+    # Visibility rules: everyone sees approved competitions, admins and owners see unapproved ones
+    user_role = getattr(current_user, "role", None)
+    user_id = getattr(current_user, "id", None)
+
+    if user_role == UserRole.ADMIN:
+        # Admins can see all competitions
+        pass
+    elif user_id:
+        # Authenticated users (creators) can see their own competitions + approved ones
+        conditions.append(or_(Competition.is_approved, Competition.owner_id == user_id))
+    else:
+        # Unauthenticated users can only see approved competitions
+        conditions.append(Competition.is_approved)
+
     if params.location:
         conditions.append(Competition.location == params.location)
     if params.format is not None:
@@ -66,6 +83,10 @@ async def list_competitions(
         conditions.append(Competition.is_active == params.is_active)
     if params.is_featured is not None:
         conditions.append(Competition.is_featured == params.is_featured)
+    if params.is_approved is not None:
+        conditions.append(Competition.is_approved == params.is_approved)
+    if params.is_rejected is not None:
+        conditions.append(Competition.is_rejected == params.is_rejected)
     if params.search:
         like = f"%{params.search}%"
         conditions.append(
@@ -73,7 +94,7 @@ async def list_competitions(
         )
 
     # owner constraint
-    if getattr(current_user, "role", None) == UserRole.ADMIN:
+    if user_role == UserRole.ADMIN:
         if params.owner_id is not None:
             conditions.append(Competition.owner_id == params.owner_id)
     else:
@@ -81,24 +102,37 @@ async def list_competitions(
         if params.owner_id is not None:
             raise ForbiddenCompetitionOwnerFilterError()
 
-    stmt = select(Competition)
-    if conditions:
-        stmt = stmt.where(and_(*conditions))
     stmt = (
-        stmt.order_by(Competition.created_at.desc())
+        select(Competition, User)
+        .outerjoin(User, Competition.owner_id == User.id)
+        .where(and_(*conditions) if conditions else True)
+        .order_by(Competition.created_at.desc())
         .offset(params.skip)
         .limit(params.limit)
     )
 
-    comps = (await db.execute(stmt)).scalars().all()
+    results = (await db.execute(stmt)).all()
 
     count_stmt = select(func.count()).select_from(
         select(Competition).where(and_(*conditions) if conditions else True).subquery()
     )
     total = (await db.execute(count_stmt)).scalar() or 0
 
+    competitions_with_owners = []
+    for comp, owner in results:
+        owner_summary = None
+        if owner:
+            owner_summary = UserSummary(
+                id=owner.id,
+                full_name=owner.full_name,
+                email=owner.email,
+            )
+        competitions_with_owners.append(
+            CompetitionResponse.from_model(comp, owner_summary)
+        )
+
     return CompetitionList(
-        competitions=[CompetitionResponse.from_model(c) for c in comps],
+        competitions=competitions_with_owners,
         total=total,
     )
 
@@ -139,6 +173,10 @@ async def list_competitions_by_user(
         conditions.append(Competition.is_active == params.is_active)
     if params.is_featured is not None:
         conditions.append(Competition.is_featured == params.is_featured)
+    if params.is_approved is not None:
+        conditions.append(Competition.is_approved == params.is_approved)
+    if params.is_rejected is not None:
+        conditions.append(Competition.is_rejected == params.is_rejected)
     if params.search:
         like = f"%{params.search}%"
         conditions.append(
@@ -146,21 +184,34 @@ async def list_competitions_by_user(
         )
 
     stmt = (
-        select(Competition)
+        select(Competition, User)
+        .outerjoin(User, Competition.owner_id == User.id)
         .where(and_(*conditions))
         .order_by(Competition.created_at.desc())
         .offset(params.skip)
         .limit(params.limit)
     )
 
-    comps = (await db.execute(stmt)).scalars().all()
+    results = (await db.execute(stmt)).all()
     count_stmt = select(func.count()).select_from(
         select(Competition).where(and_(*conditions)).subquery()
     )
     total = (await db.execute(count_stmt)).scalar() or 0
-    return CompetitionList(
-        competitions=[CompetitionResponse.from_model(c) for c in comps], total=total
-    )
+
+    competitions_with_owners = []
+    for comp, owner in results:
+        owner_summary = None
+        if owner:
+            owner_summary = UserSummary(
+                id=owner.id,
+                full_name=owner.full_name,
+                email=owner.email,
+            )
+        competitions_with_owners.append(
+            CompetitionResponse.from_model(comp, owner_summary)
+        )
+
+    return CompetitionList(competitions=competitions_with_owners, total=total)
 
 
 @router.get("/detail/{competition_id}", response_model=CompetitionResponse)
@@ -174,7 +225,96 @@ async def get_competition(
         - Public
     """
     comp = await _get_competition_or_404(db, competition_id)
-    return CompetitionResponse.from_model(comp)
+
+    # Get owner information if exists
+    owner_summary = None
+    if comp.owner_id:
+        owner_result = await db.execute(select(User).where(User.id == comp.owner_id))
+        owner = owner_result.scalar_one_or_none()
+        if owner:
+            owner_summary = UserSummary(
+                id=owner.id,
+                full_name=owner.full_name,
+                email=owner.email,
+            )
+
+    return CompetitionResponse.from_model(comp, owner_summary)
+
+
+@router.get(
+    "/admin/pending",
+    response_model=CompetitionList,
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def list_pending_competitions(
+    params: CompetitionFilterParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List competitions pending approval.
+
+    Permissions:
+        - Admin only
+
+    Notes:
+        - Default ordering: most recent first (created_at DESC)
+    """
+
+    conditions = [
+        not Competition.is_approved,  # Not approved
+        not Competition.is_rejected,  # Not rejected (still pending)
+    ]
+
+    if params.location:
+        conditions.append(Competition.location == params.location)
+    if params.format is not None:
+        conditions.append(Competition.format == params.format)
+    if params.scale is not None:
+        conditions.append(Competition.scale == params.scale)
+    if params.is_active is not None:
+        conditions.append(Competition.is_active == params.is_active)
+    if params.is_featured is not None:
+        conditions.append(Competition.is_featured == params.is_featured)
+    if params.is_approved is not None:
+        conditions.append(Competition.is_approved == params.is_approved)
+    if params.is_rejected is not None:
+        conditions.append(Competition.is_rejected == params.is_rejected)
+    if params.search:
+        like = f"%{params.search}%"
+        conditions.append(
+            or_(Competition.title.ilike(like), Competition.description.ilike(like))
+        )
+
+    stmt = (
+        select(Competition, User)
+        .outerjoin(User, Competition.owner_id == User.id)
+        .where(and_(*conditions))
+        .order_by(Competition.created_at.desc())
+        .offset(params.skip)
+        .limit(params.limit)
+    )
+
+    results = (await db.execute(stmt)).all()
+
+    count_stmt = select(func.count()).select_from(
+        select(Competition).where(and_(*conditions)).subquery()
+    )
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    competitions_with_owners = []
+    for comp, owner in results:
+        owner_summary = None
+        if owner:
+            owner_summary = UserSummary(
+                id=owner.id,
+                full_name=owner.full_name,
+                email=owner.email,
+            )
+        competitions_with_owners.append(
+            CompetitionResponse.from_model(comp, owner_summary)
+        )
+
+    return CompetitionList(competitions=competitions_with_owners, total=total)
 
 
 @router.post(
@@ -210,6 +350,9 @@ async def create_competition(
         owner_id=current_user.id,
         is_active=True,
         is_featured=False,
+        is_approved=False,  # New competitions need admin approval
+        is_rejected=False,  # New competitions are not rejected
+        rejection_reason=None,  # No rejection reason initially
     )
     # handle detail image urls
     if payload.detail_image_urls:
@@ -218,7 +361,15 @@ async def create_competition(
     db.add(comp)
     await db.flush()
     await db.refresh(comp)
-    return CompetitionResponse.from_model(comp)
+
+    # Get owner information for response
+    owner_summary = UserSummary(
+        id=current_user.id,
+        full_name=current_user.full_name,
+        email=current_user.email,
+    )
+
+    return CompetitionResponse.from_model(comp, owner_summary)
 
 
 @router.put("/{competition_id}", response_model=CompetitionResponse)
@@ -272,7 +423,20 @@ async def update_competition(
 
     await db.flush()
     await db.refresh(comp)
-    return CompetitionResponse.from_model(comp)
+
+    # Get owner information for response
+    owner_summary = None
+    if comp.owner_id:
+        owner_result = await db.execute(select(User).where(User.id == comp.owner_id))
+        owner = owner_result.scalar_one_or_none()
+        if owner:
+            owner_summary = UserSummary(
+                id=owner.id,
+                full_name=owner.full_name,
+                email=owner.email,
+            )
+
+    return CompetitionResponse.from_model(comp, owner_summary)
 
 
 @router.put("/{competition_id}/status/active", status_code=status.HTTP_204_NO_CONTENT)
@@ -342,3 +506,113 @@ async def delete_competition(
         raise ForbiddenCompetitionAccessError("Not allowed to delete this competition")
     await db.delete(comp)
     await db.flush()
+
+
+# Admin-only endpoints for competition management
+@router.put(
+    "/admin/{competition_id}/approve",
+    response_model=dict,
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def approve_competition(
+    competition_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Approve a competition.
+
+    Permissions:
+        - Admin only
+    """
+    comp = await _get_competition_or_404(db, competition_id)
+    comp.is_approved = True
+    await db.flush()
+    return {"message": "Competition approved successfully"}
+
+
+@router.put(
+    "/admin/{competition_id}/reject",
+    response_model=dict,
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def reject_competition(
+    competition_id: UUID,
+    payload: CompetitionRejectPayload,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Reject a competition.
+
+    Permissions:
+        - Admin only
+    """
+    comp = await _get_competition_or_404(db, competition_id)
+    comp.is_approved = False
+    comp.is_rejected = True
+    comp.rejection_reason = payload.rejection_reason
+    await db.flush()
+    return {"message": "Competition rejected successfully"}
+
+
+@router.put(
+    "/admin/{competition_id}/feature",
+    response_model=dict,
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def admin_feature_competition(
+    competition_id: UUID,
+    payload: CompetitionFeaturedUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Feature a competition (admin only).
+
+    Permissions:
+        - Admin only
+    """
+    comp = await _get_competition_or_404(db, competition_id)
+    comp.is_featured = payload.is_featured
+    await db.flush()
+    return {"message": "Competition featured successfully"}
+
+
+@router.put(
+    "/admin/{competition_id}/unfeature",
+    response_model=dict,
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def admin_unfeature_competition(
+    competition_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Unfeature a competition (admin only).
+
+    Permissions:
+        - Admin only
+    """
+    comp = await _get_competition_or_404(db, competition_id)
+    comp.is_featured = False
+    await db.flush()
+    return {"message": "Competition unfeatured successfully"}
+
+
+@router.put(
+    "/admin/{competition_id}/deactivate",
+    response_model=dict,
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def admin_deactivate_competition(
+    competition_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Deactivate a competition (admin only).
+
+    Permissions:
+        - Admin only
+    """
+    comp = await _get_competition_or_404(db, competition_id)
+    comp.is_active = False
+    await db.flush()
+    return {"message": "Competition deactivated successfully"}

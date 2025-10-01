@@ -81,8 +81,8 @@ All application errors return:
 
 - `app/api/routes/competitions.py`
   - `CompetitionNotFoundError` (COMPETITION_001) when competition id not found
-  - `ForbiddenCompetitionOwnerFilterError` (COMPETITION_002) when non-admin filters by `owner_id` or lists other users' competitions
-  - `ForbiddenCompetitionAccessError` (COMPETITION_003) when non-owner/non-admin updates, deletes, or toggles status
+  - `ForbiddenCompetitionOwnerFilterError` (COMPETITION_002) when non-admin filters by `owner_id`, lists other users' competitions, or accesses another user's listing by `user_id`
+  - `ForbiddenCompetitionAccessError` (COMPETITION_003) when non-owner/non-admin updates, deletes, toggles status, or attempts admin-only approve/reject/feature actions
 
 ### Validation errors (422)
 

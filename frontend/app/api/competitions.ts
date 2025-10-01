@@ -1,32 +1,30 @@
 import { apiRequest } from './utils';
 import { uploadImage } from './upload';
 
+export interface UserSummary {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
 export interface Competition {
   id: string;
   title: string;
-  introduction: string;
-  overview?: string;
-  question_type?: string;
-  selection_process?: string;
-  history?: string;
-  scoring_and_format?: string;
-  awards?: string;
-  penalties_and_bans?: string;
-  notable_achievements?: string;
+  description?: string;
   competition_link?: string;
+  registration_deadline?: string;
   background_image_url?: string;
   detail_image_urls?: string[];
-  location: string;
-  format: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-  scale: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
-  registration_deadline: string;
-  size?: number;
-  target_age_min?: number;
-  target_age_max?: number;
+  location?: string;
+  format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  scale?: 'REGIONAL' | 'INTERNATIONAL';
+  owner_id: string;
+  owner?: UserSummary;
   is_active: boolean;
   is_featured: boolean;
   is_approved: boolean;
-  owner_id: string;
+  is_rejected: boolean;
+  rejection_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -158,19 +156,19 @@ class CompetitionsAPI {
       });
     }
     const queryString = searchParams.toString();
-    const endpoint = `/api/v1/admin/competitions/pending${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/v1/competitions/admin/pending${queryString ? `?${queryString}` : ''}`;
     return apiRequest<CompetitionListResponse>(endpoint, { requireAuth: true });
   }
 
   async approveCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/admin/competitions/${id}/approve`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/approve`, {
       method: 'PUT',
       requireAuth: true,
     });
   }
 
   async rejectCompetition(id: string, rejectionReason?: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/admin/competitions/${id}/reject`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/reject`, {
       method: 'PUT',
       body: JSON.stringify({ rejection_reason: rejectionReason }),
       requireAuth: true,
@@ -178,28 +176,28 @@ class CompetitionsAPI {
   }
 
   async featureCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/admin/competitions/${id}/feature`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/feature`, {
       method: 'PUT',
       requireAuth: true,
     });
   }
 
   async unfeatureCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/admin/competitions/${id}/unfeature`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/unfeature`, {
       method: 'PUT',
       requireAuth: true,
     });
   }
 
   async activateCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/admin/competitions/${id}/activate`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/activate`, {
       method: 'PUT',
       requireAuth: true,
     });
   }
 
   async deactivateCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/admin/competitions/${id}/deactivate`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/deactivate`, {
       method: 'PUT',
       requireAuth: true,
     });
