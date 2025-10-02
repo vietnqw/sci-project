@@ -23,6 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Installing project files
 COPY ./app /app/app
 COPY ./scripts /app/scripts
+COPY ./alembic /app/alembic
 COPY ./pyproject.toml ./uv.lock /app/
 COPY ./alembic.ini /app/alembic.ini
 COPY ./README.md /app/README.md
