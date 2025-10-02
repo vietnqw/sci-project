@@ -53,7 +53,7 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000 || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=2 \
+    CMD wget --quiet --tries=1 --spider http://0.0.0.0:3000 || exit 1
 
 CMD ["node", "server.js"]
