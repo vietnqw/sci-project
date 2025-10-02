@@ -1,4 +1,28 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Replace the hardcoded API_BASE_URL with a runtime configuration
+export const getApiBaseUrl = (): string => {
+  // Use window.location for runtime detection in browser
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+
+    // If running on same host as frontend, use relative URL
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+
+    // For Docker deployment, use the backend service name
+    if (hostname === 'sci-frontend') {
+      return 'http://sci-backend:8000';
+    }
+
+    // For external access, construct URL from current host
+    return `${protocol}//${hostname}${port ? `:${port}` : ''}`.replace(':3000', ':8000');
+  }
+
+  // Fallback for server-side rendering
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+};
 
 export interface ApiErrorPayload {
   detail?: string;
@@ -35,7 +59,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { requireAuth = false, ...requestOptions } = options;
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${getApiBaseUrl()}${endpoint}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

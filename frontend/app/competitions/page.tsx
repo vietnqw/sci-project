@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -53,7 +53,7 @@ function mapCompetitionToDisplay(competition: AnyCompetition) {
   };
 }
 
-export default function CompetitionsPage() {
+function CompetitionsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -453,5 +453,20 @@ export default function CompetitionsPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function CompetitionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading competitions...</p>
+        </div>
+      </div>
+    }>
+      <CompetitionsPageContent />
+    </Suspense>
   );
 }
