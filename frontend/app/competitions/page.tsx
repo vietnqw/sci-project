@@ -114,13 +114,15 @@ export default function CompetitionsPage() {
       try {
         const apiFormat = modeFilter ? modeFilter.toUpperCase() : undefined;
         const apiScale = scaleFilter ? scaleFilter.toUpperCase() : undefined;
-        const resp: any = await competitionsAPI.getCompetitions({
+        const resp: any = await competitionsAPI.getPublicCompetitions({
           skip,
           limit,
           search: search || undefined,
           scale: apiScale as any,
           format: apiFormat as any,
           location: locationFilter || undefined,
+          is_approved: true, // Only show approved competitions
+          is_active: true,   // Only show active competitions
         });
         if (!ignore) {
           setItems(Array.isArray(resp?.competitions) ? resp.competitions : []);

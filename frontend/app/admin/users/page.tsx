@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
-import { usersAPI, type UserListParams, type UserListResponse, type UserUpdate } from '../../../lib/api/users';
-import type { User } from '../../../lib/api/auth';
-import { apiRequest, ApiError } from '../../../lib/api/utils';
+import { usersAPI, type UserListParams, type UserListResponse, type UserUpdate } from '../../api/users';
+import type { User } from '../../api/auth';
+import { apiRequest, ApiError } from '../../api/utils';
 
 interface ToastState {
   type: 'success' | 'error';

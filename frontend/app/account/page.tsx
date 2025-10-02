@@ -7,8 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import UserProfileForm from '../../components/user-profile-form';
 import CreateCompetitionModal from '../../components/create-competition-modal';
 import { competitionsAPI, Competition } from '../api/competitions';
-import { apiRequest, ApiError } from '../../lib/api/utils';
-import type { User } from '../../lib/api/auth';
+import { apiRequest, ApiError } from '../api/utils';
+import type { User } from '../api/auth';
 
 type TabKey = 'profile' | 'competitions' | 'admin';
 

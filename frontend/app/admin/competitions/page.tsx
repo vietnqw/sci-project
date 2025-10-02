@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { competitionsAPI, type Competition, type CompetitionListResponse } from '../../api/competitions';
-import { ApiError } from '../../../lib/api/utils';
+import { ApiError } from '../../api/utils';
 
 type TabKey = 'pending' | 'all';
 
@@ -14,14 +14,39 @@ const DEFAULT_LIMIT = 15;
 export default function AdminCompetitionsPage() {
   const { user: authUser, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<TabKey>('pending');
+  // Initialize activeTab from URL query parameter
+  const getInitialTab = (): TabKey => {
+    const tab = searchParams.get('tab');
+    return (tab === 'pending' || tab === 'all') ? tab : 'pending';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabKey>(getInitialTab);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Function to update URL when tab changes
+  const updateTabInUrl = (tab: TabKey) => {
+    const url = new URL(window.location.href);
+    if (tab === 'pending') {
+      url.searchParams.delete('tab'); // Remove tab param for default 'pending' tab
+    } else {
+      url.searchParams.set('tab', tab);
+    }
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
+
+  // Handle tab change with URL update
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    updateTabInUrl(tab);
+    setPage(1); // Reset to first page when changing tabs
+  };
 
   // Filters (for All tab)
   const [search, setSearch] = useState('');
@@ -42,6 +67,16 @@ export default function AdminCompetitionsPage() {
       }
     }
   }, [authUser, isAuthLoading, router]);
+
+  // Sync tab state with URL changes (browser back/forward)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const newTab = (tab === 'pending' || tab === 'all') ? tab : 'pending';
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+      setPage(1); // Reset to first page when URL changes
+    }
+  }, [searchParams, activeTab]);
 
   useEffect(() => {
     if (authUser?.role === 'ADMIN') {
@@ -65,6 +100,7 @@ export default function AdminCompetitionsPage() {
         const params: any = {
           skip: (page - 1) * DEFAULT_LIMIT,
           limit: DEFAULT_LIMIT,
+          is_approved: true, // Only show approved competitions in "All Competitions" tab
         };
         if (statusFilter !== 'any') params.is_active = statusFilter === 'active';
         if (featuredFilter !== 'any') params.is_featured = featuredFilter === 'featured';
@@ -236,11 +272,11 @@ export default function AdminCompetitionsPage() {
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
           <div className="flex items-center gap-2 border-b border-gray-200 mb-4">
             {(['pending', 'all'] as TabKey[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => { setPage(1); setActiveTab(tab); }}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              >
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
                 {tab === 'pending' ? 'Pending Approval' : 'All Competitions'}
               </button>
             ))}

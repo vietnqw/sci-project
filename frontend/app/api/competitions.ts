@@ -83,12 +83,39 @@ class CompetitionsAPI {
     const queryString = searchParams.toString();
     const endpoint = `/api/v1/competitions${queryString ? `?${queryString}` : ''}`;
 
-    return apiRequest<CompetitionListResponse>(endpoint);
+    return apiRequest<CompetitionListResponse>(endpoint, { requireAuth: true });
+  }
+
+  async getPublicCompetitions(params?: {
+    skip?: number;
+    limit?: number;
+    format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+    scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
+    location?: string;
+    search?: string;
+    is_active?: boolean;
+    is_featured?: boolean;
+  }): Promise<CompetitionListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, typeof value === 'boolean' ? String(value) : value.toString());
+        }
+      });
+    }
+
+    const queryString = searchParams.toString();
+    const endpoint = `/api/v1/competitions${queryString ? `?${queryString}` : ''}`;
+
+    return apiRequest<CompetitionListResponse>(endpoint); // No requireAuth for public access
   }
 
   async getFeaturedCompetitions(params?: { skip?: number; limit?: number }): Promise<CompetitionListResponse> {
     const searchParams = new URLSearchParams();
     searchParams.append('is_featured', 'true');
+    searchParams.append('is_approved', 'true'); // Only show approved competitions
+    searchParams.append('is_active', 'true');   // Only show active competitions
     if (params) {
       if (params.skip !== undefined) searchParams.append('skip', String(params.skip));
       if (params.limit !== undefined) searchParams.append('limit', String(params.limit));
@@ -178,6 +205,7 @@ class CompetitionsAPI {
   async featureCompetition(id: string): Promise<{ message: string }> {
     return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/feature`, {
       method: 'PUT',
+      body: JSON.stringify({ is_featured: true }),
       requireAuth: true,
     });
   }
@@ -190,15 +218,17 @@ class CompetitionsAPI {
   }
 
   async activateCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/activate`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/${id}/status/active`, {
       method: 'PUT',
+      body: JSON.stringify({ is_active: true }),
       requireAuth: true,
     });
   }
 
   async deactivateCompetition(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/api/v1/competitions/admin/${id}/deactivate`, {
+    return apiRequest<{ message: string }>(`/api/v1/competitions/${id}/status/active`, {
       method: 'PUT',
+      body: JSON.stringify({ is_active: false }),
       requireAuth: true,
     });
   }

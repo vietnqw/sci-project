@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { User } from '../lib/api/auth';
-import type { UserUpdate } from '../lib/api/users';
+import type { User } from '../app/api/auth';
+import type { UserUpdate } from '../app/api/users';
 
 interface UserProfileFormProps {
   user: User | null;

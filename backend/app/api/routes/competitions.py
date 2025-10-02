@@ -64,14 +64,14 @@ async def list_competitions(
     user_id = getattr(current_user, "id", None)
 
     if user_role == UserRole.ADMIN:
-        # Admins can see all competitions
+        # Admins can see all competitions (including inactive ones)
         pass
     elif user_id:
-        # Authenticated users (creators) can see their own competitions + approved ones
-        conditions.append(or_(Competition.is_approved, Competition.owner_id == user_id))
+        # Authenticated users (creators) can see their own competitions + approved active ones
+        conditions.append(or_(and_(Competition.is_approved == True, Competition.is_active == True), Competition.owner_id == user_id))
     else:
-        # Unauthenticated users can only see approved competitions
-        conditions.append(Competition.is_approved)
+        # Unauthenticated users can only see approved and active competitions
+        conditions.append(and_(Competition.is_approved == True, Competition.is_active == True))
 
     if params.location:
         conditions.append(Competition.location == params.location)
@@ -261,8 +261,8 @@ async def list_pending_competitions(
     """
 
     conditions = [
-        not Competition.is_approved,  # Not approved
-        not Competition.is_rejected,  # Not rejected (still pending)
+        Competition.is_approved == False,  # Not approved
+        Competition.is_rejected == False,  # Not rejected (still pending)
     ]
 
     if params.location:

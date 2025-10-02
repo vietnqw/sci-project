@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authAPI, User } from '../../lib/api/auth';
-import { handleAuthError } from '../../lib/api/utils';
+import { authAPI, User } from '../api/auth';
+import { handleAuthError } from '../api/utils';
 
 interface AuthContextType {
   user: User | null;
