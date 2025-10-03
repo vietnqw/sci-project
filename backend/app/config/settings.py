@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # API Configuration
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "SCI"
-    ENVIRONMENT: Literal["local", "production", "test"] = "local"
+    ENVIRONMENT: Literal["local", "production"] = "local"
 
     # Server Configuration
     BACKEND_HOST: str = "0.0.0.0"
@@ -31,7 +31,6 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "sci_db"
-    POSTGRES_DB_TEST: str = "sci_db_test"
 
     # Datbase Connection Pool Configuration
     POSTGRES_POOL_SIZE: int = Field(
@@ -68,12 +67,9 @@ class Settings(BaseSettings):
     @property
     def POSTGRES_URL(self) -> str:
         """Asynchronous PostgreSQL URL for SQLAlchemy"""
-        db_name = (
-            self.POSTGRES_DB_TEST if self.ENVIRONMENT == "test" else self.POSTGRES_DB
-        )
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{db_name}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
     @property

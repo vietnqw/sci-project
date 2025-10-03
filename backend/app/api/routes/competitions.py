@@ -68,10 +68,15 @@ async def list_competitions(
         pass
     elif user_id:
         # Authenticated users (creators) can see their own competitions + approved active ones
-        conditions.append(or_(and_(Competition.is_approved == True, Competition.is_active == True), Competition.owner_id == user_id))
+        conditions.append(
+            or_(
+                and_(Competition.is_approved, Competition.is_active),
+                Competition.owner_id == user_id,
+            )
+        )
     else:
         # Unauthenticated users can only see approved and active competitions
-        conditions.append(and_(Competition.is_approved == True, Competition.is_active == True))
+        conditions.append(Competition.is_active)
 
     if params.location:
         conditions.append(Competition.location == params.location)
@@ -261,8 +266,8 @@ async def list_pending_competitions(
     """
 
     conditions = [
-        Competition.is_approved == False,  # Not approved
-        Competition.is_rejected == False,  # Not rejected (still pending)
+        ~Competition.is_approved,  # Not approved
+        ~Competition.is_rejected,  # Not rejected (still pending)
     ]
 
     if params.location:
