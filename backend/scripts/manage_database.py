@@ -245,7 +245,10 @@ def load_dummy_data(session: SyncSession, path: str) -> int:
             scale=cd.get("scale"),
             owner_id=owner.id,
             is_active=True,
-            is_featured=False,
+            is_featured=bool(cd.get("is_featured", False)),
+            is_approved=bool(cd.get("is_approved", False)),
+            is_rejected=bool(cd.get("is_rejected", False)),
+            rejection_reason=cd.get("rejection_reason"),
         )
         # detail images
         if cd.get("detail_image_urls"):

@@ -40,7 +40,11 @@
       "location": "Hanoi",
       "format": "ONLINE",
       "scale": "REGIONAL",
-      "owner_email": "user1@example.com"
+      "owner_email": "user1@example.com",
+      "is_approved": true,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": true
     },
     {
       "title": "Robotics Challenge 2025",
@@ -52,7 +56,11 @@
       "location": "Da Nang",
       "format": "OFFLINE",
       "scale": "INTERNATIONAL",
-      "owner_email": "user1@example.com"
+      "owner_email": "user1@example.com",
+      "is_approved": true,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": true
     },
     {
       "title": "Math Olympiad Qualifiers",
@@ -64,7 +72,11 @@
       "location": "Ho Chi Minh City",
       "format": "HYBRID",
       "scale": "PROVINCIAL",
-      "owner_email": "user1@example.com"
+      "owner_email": "user1@example.com",
+      "is_approved": true,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": true
     },
     {
       "title": "AI Innovation Sprint",
@@ -76,7 +88,11 @@
       "location": "Hue",
       "format": "ONLINE",
       "scale": "REGIONAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": true,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Chemistry Lab Masters",
@@ -88,7 +104,11 @@
       "location": "Can Tho",
       "format": "OFFLINE",
       "scale": "REGIONAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": true,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": true
     },
     {
       "title": "Environmental Solutions Cup",
@@ -100,7 +120,11 @@
       "location": "Hanoi",
       "format": "HYBRID",
       "scale": "INTERNATIONAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": false,
+      "is_rejected": true,
+      "rejection_reason": "Need more details",
+      "is_featured": false
     },
     {
       "title": "Data Science Hackfest",
@@ -112,7 +136,11 @@
       "location": "Nha Trang",
       "format": "ONLINE",
       "scale": "PROVINCIAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": false,
+      "is_rejected": true,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Physics Tournament",
@@ -124,7 +152,11 @@
       "location": "Hai Phong",
       "format": "OFFLINE",
       "scale": "REGIONAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Bio Research Showcase",
@@ -136,7 +168,11 @@
       "location": "Hanoi",
       "format": "ONLINE",
       "scale": "INTERNATIONAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Cybersecurity CTF",
@@ -148,7 +184,11 @@
       "location": "Ho Chi Minh City",
       "format": "HYBRID",
       "scale": "PROVINCIAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Astronomy Night Quest",
@@ -160,7 +200,11 @@
       "location": "Da Lat",
       "format": "OFFLINE",
       "scale": "REGIONAL",
-      "owner_email": "user2@example.com"
+      "owner_email": "user2@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Innovators Pitch Day",
@@ -172,7 +216,11 @@
       "location": "Hanoi",
       "format": "ONLINE",
       "scale": "REGIONAL",
-      "owner_email": "user3@example.com"
+      "owner_email": "user3@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Green Tech Marathon",
@@ -184,7 +232,11 @@
       "location": "Hue",
       "format": "HYBRID",
       "scale": "INTERNATIONAL",
-      "owner_email": "user3@example.com"
+      "owner_email": "user3@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Quantum Computing Jam",
@@ -196,7 +248,11 @@
       "location": "Hanoi",
       "format": "OFFLINE",
       "scale": "PROVINCIAL",
-      "owner_email": "user3@example.com"
+      "owner_email": "user3@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "Maritime Engineering Cup",
@@ -208,7 +264,11 @@
       "location": "Hai Phong",
       "format": "ONLINE",
       "scale": "REGIONAL",
-      "owner_email": "user3@example.com"
+      "owner_email": "user3@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     },
     {
       "title": "STEM Teachers Showcase",
@@ -220,7 +280,11 @@
       "location": "Hanoi",
       "format": "HYBRID",
       "scale": "INTERNATIONAL",
-      "owner_email": "user3@example.com"
+      "owner_email": "user3@example.com",
+      "is_approved": false,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": false
     }
   ]
 }
