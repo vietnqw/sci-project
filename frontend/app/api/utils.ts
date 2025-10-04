@@ -1,36 +1,11 @@
-// Flexible API base URL configuration with Nginx Proxy Manager support
-export const getApiBaseUrl = (): string => {
-  // Use environment variable as primary configuration
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
-
-  if (envUrl) {
-    return envUrl;
-  }
-
-  // Runtime detection for browser environment
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location;
-
-    // For development (localhost), use port 8000
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `http://localhost:8000`;
-    }
-
-    // For production with Nginx Proxy Manager, use relative URL
-    // This assumes API is served from /api path on same domain
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // Use relative URL for reverse proxy setups
-      return '/api';
-    }
-
-    // Fallback for other development scenarios
-    const backendPort = port === '3000' ? '8000' : port;
-    return `${protocol}//${hostname}${backendPort ? `:${backendPort}` : ''}`;
-  }
-
-  // Fallback for server-side rendering and unknown environments
-  return 'http://localhost:8000';
+const getApiBaseUrl = (): string => {
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 };
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Export for debugging
+export { getApiBaseUrl };
 
 export interface ApiErrorPayload {
   detail?: string;
@@ -67,7 +42,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { requireAuth = false, ...requestOptions } = options;
 
-  const url = `${getApiBaseUrl()}${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

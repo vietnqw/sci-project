@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1
 # Compile bytecode
@@ -6,7 +6,7 @@ ENV UV_COMPILE_BYTECODE=1
 # uv Caching
 ENV UV_LINK_MODE=copy
 
-# Install system dependencies for healthcheck
+# Install system dependencies
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -23,11 +23,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Installing project files
 COPY ./app /app/app
 COPY ./scripts /app/scripts
-COPY ./alembic /app/alembic
 COPY ./data /app/data
-COPY ./pyproject.toml ./uv.lock /app/
-COPY ./alembic.ini /app/alembic.ini
-COPY ./README.md /app/README.md
+COPY ./alembic /app/alembic
+COPY ./pyproject.toml ./uv.lock ./README.md ./alembic.ini /app/
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \

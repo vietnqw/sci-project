@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import { config } from 'dotenv';
+import path from 'path';
+
+// Load environment variables from parent directory
+config({ path: path.resolve(__dirname, '../.env') });
 
 const nextConfig: NextConfig = {
   output: 'standalone',

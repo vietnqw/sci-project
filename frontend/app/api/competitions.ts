@@ -70,6 +70,7 @@ class CompetitionsAPI {
     search?: string;
     is_active?: boolean;
     is_featured?: boolean;
+    is_approved?: boolean;
   }): Promise<CompetitionListResponse> {
     const searchParams = new URLSearchParams();
     if (params) {
@@ -95,6 +96,7 @@ class CompetitionsAPI {
     search?: string;
     is_active?: boolean;
     is_featured?: boolean;
+    is_approved?: boolean;
   }): Promise<CompetitionListResponse> {
     const searchParams = new URLSearchParams();
     if (params) {
