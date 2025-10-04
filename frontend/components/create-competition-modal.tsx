@@ -23,10 +23,18 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // File upload states
+  const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
+  const [detailImageFiles, setDetailImageFiles] = useState<File[]>([]);
+  const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(null);
+  const [detailImagePreviews, setDetailImagePreviews] = useState<string[]>([]);
+
+
   if (!isOpen) return null;
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+
 
     if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
@@ -63,8 +71,45 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
     }
   };
 
+  const handleBackgroundImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBackgroundImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBackgroundImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDetailImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setDetailImageFiles(prev => [...prev, ...files]);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setDetailImagePreviews(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeDetailImage = (index: number) => {
+    setDetailImageFiles(prev => prev.filter((_, i) => i !== index));
+    setDetailImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeBackgroundImage = () => {
+    setBackgroundImageFile(null);
+    setBackgroundImagePreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
 
     if (!validate()) return;
 
@@ -83,7 +128,16 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
         scale: formData.scale || undefined,
       };
 
-      await competitionsAPI.createCompetition(submitData);
+      // Use file upload API if files are provided, otherwise use regular API
+      if (backgroundImageFile || detailImageFiles.length > 0) {
+        await competitionsAPI.createCompetitionWithFiles(
+          submitData,
+          backgroundImageFile || undefined,
+          detailImageFiles.length > 0 ? detailImageFiles : undefined
+        );
+      } else {
+        await competitionsAPI.createCompetition(submitData);
+      }
 
       // Reset form
       setFormData({
@@ -96,6 +150,10 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
         format: undefined,
         scale: undefined,
       });
+      setBackgroundImageFile(null);
+      setDetailImageFiles([]);
+      setBackgroundImagePreview(null);
+      setDetailImagePreviews([]);
       setErrors({});
 
       onSuccess();
@@ -119,6 +177,10 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
       format: undefined,
       scale: undefined,
     });
+    setBackgroundImageFile(null);
+    setDetailImageFiles([]);
+    setBackgroundImagePreview(null);
+    setDetailImagePreviews([]);
     setErrors({});
     onClose();
   };
@@ -275,23 +337,79 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
             {errors.competition_link && <p className="mt-1 text-sm text-red-500">{errors.competition_link}</p>}
           </div>
 
-          {/* Background Image URL */}
+          {/* Background Image Upload */}
           <div>
-            <label htmlFor="background_image_url" className="block text-sm font-semibold text-gray-700 mb-2">
-              Background Image URL
+            <label htmlFor="background_image" className="block text-sm font-semibold text-gray-700 mb-2">
+              Background Image
             </label>
-            <input
-              id="background_image_url"
-              type="url"
-              value={formData.background_image_url}
-              onChange={(e) => setFormData({ ...formData, background_image_url: e.target.value })}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                errors.background_image_url ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="https://example.com/image.jpg"
-            />
-            {errors.background_image_url && <p className="mt-1 text-sm text-red-500">{errors.background_image_url}</p>}
-            <p className="mt-1 text-xs text-gray-500">Optional: Provide a URL to an image for the competition background</p>
+            <div className="space-y-3">
+              <input
+                id="background_image"
+                type="file"
+                accept="image/*"
+                onChange={handleBackgroundImageChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              />
+              {backgroundImagePreview && (
+                <div className="relative">
+                  <img
+                    src={backgroundImagePreview}
+                    alt="Background preview"
+                    className="w-full h-48 object-cover rounded-lg border"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeBackgroundImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Optional: Upload an image for the competition background</p>
+          </div>
+
+          {/* Detail Images Upload */}
+          <div>
+            <label htmlFor="detail_images" className="block text-sm font-semibold text-gray-700 mb-2">
+              Detail Images
+            </label>
+            <div className="space-y-3">
+              <input
+                id="detail_images"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleDetailImagesChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              />
+              {detailImagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {detailImagePreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={preview}
+                        alt={`Detail preview ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeDetailImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Optional: Upload multiple images to showcase the competition</p>
           </div>
 
           {/* Error message */}

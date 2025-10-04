@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import List
 from uuid import UUID
 
+from fastapi import UploadFile
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 from pydantic import field_validator
 
@@ -202,3 +204,43 @@ class CompetitionRejectPayload(BaseModel):
     """Payload for rejecting a competition (optional reason)."""
 
     rejection_reason: str | None = None
+
+
+class CompetitionCreateWithFiles(BaseModel):
+    """Payload for creating a competition with file uploads."""
+
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
+    competition_link: HttpUrl | None = Field(default=None)
+    registration_deadline: datetime | None = None
+    location: str | None = Field(default=None, max_length=100)
+    format: CompetitionFormat | None = Field(default=None)
+    scale: CompetitionScale | None = Field(default=None)
+
+    # File uploads
+    background_image: UploadFile | None = None
+    detail_images: List[UploadFile] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+
+class CompetitionUpdateWithFiles(BaseModel):
+    """Payload for updating a competition with file uploads."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
+    competition_link: HttpUrl | None = Field(default=None)
+    registration_deadline: datetime | None = None
+    location: str | None = Field(default=None, max_length=100)
+    format: CompetitionFormat | None = Field(default=None)
+    scale: CompetitionScale | None = Field(default=None)
+
+    # File uploads
+    background_image: UploadFile | None = None
+    detail_images: List[UploadFile] = Field(default_factory=list)
+
+    # URLs to remove (for updating)
+    remove_background_image: bool = False
+    remove_detail_images: List[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)

@@ -235,22 +235,28 @@ class CompetitionsAPI {
     });
   }
 
-  async createCompetitionWithImages(
+  async createCompetitionWithFiles(
     data: CompetitionCreate,
     backgroundImageFile?: File,
     detailImageFiles?: File[]
   ): Promise<Competition> {
-    const competitionWithoutImages = { ...data } as any;
+    // Step 1: Create competition without images to get the ID
+    const competitionWithoutImages = { ...data };
     delete competitionWithoutImages.background_image_url;
     delete competitionWithoutImages.detail_image_urls;
 
     const createdCompetition = await this.createCompetition(competitionWithoutImages);
     const competitionId = createdCompetition.id;
 
+    // Step 2: Upload images if provided
     let backgroundImageUrl = data.background_image_url;
     let detailImageUrls = data.detail_image_urls || [];
 
     try {
+      // Import upload service
+      const { uploadImage } = await import('./upload');
+
+      // Upload background image if provided as file
       if (backgroundImageFile) {
         const uploadResult = await uploadImage(backgroundImageFile, {
           category: 'competition-background',
@@ -259,6 +265,7 @@ class CompetitionsAPI {
         backgroundImageUrl = uploadResult.url;
       }
 
+      // Upload detail images if provided as files
       if (detailImageFiles && detailImageFiles.length > 0) {
         const uploadPromises = detailImageFiles.map(file =>
           uploadImage(file, {
@@ -272,6 +279,7 @@ class CompetitionsAPI {
         detailImageUrls = [...detailImageUrls, ...newDetailUrls];
       }
 
+      // Step 3: Update competition with image URLs if any were uploaded
       if (backgroundImageFile || (detailImageFiles && detailImageFiles.length > 0)) {
         const updateData: CompetitionUpdate = {};
 
@@ -283,15 +291,61 @@ class CompetitionsAPI {
           updateData.detail_image_urls = detailImageUrls;
         }
 
-        const updatedCompetition = await this.updateCompetition(competitionId, updateData);
-        return updatedCompetition;
+        return await this.updateCompetition(competitionId, updateData);
       }
 
       return createdCompetition;
     } catch (error) {
-      console.error('Failed to upload images for competition:', error);
+      // If image upload fails, we should clean up the created competition
+      // For now, just re-throw the error
       throw error;
     }
+  }
+
+  async updateCompetitionWithFiles(
+    id: string,
+    data: CompetitionUpdate,
+    backgroundImageFile?: File,
+    detailImageFiles?: File[],
+    removeBackgroundImage?: boolean,
+    removeDetailImages?: string[]
+  ): Promise<Competition> {
+    const formData = new FormData();
+
+    // Add text fields
+    if (data.title) formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    if (data.competition_link) formData.append('competition_link', data.competition_link);
+    if (data.registration_deadline) formData.append('registration_deadline', data.registration_deadline);
+    if (data.location) formData.append('location', data.location);
+    if (data.format) formData.append('format', data.format);
+    if (data.scale) formData.append('scale', data.scale);
+
+    // Add files
+    if (backgroundImageFile) {
+      formData.append('background_image', backgroundImageFile);
+    }
+
+    if (detailImageFiles && detailImageFiles.length > 0) {
+      detailImageFiles.forEach(file => {
+        formData.append('detail_images', file);
+      });
+    }
+
+    // Add removal flags
+    if (removeBackgroundImage) {
+      formData.append('remove_background_image', 'true');
+    }
+
+    if (removeDetailImages && removeDetailImages.length > 0) {
+      formData.append('remove_detail_images', JSON.stringify(removeDetailImages));
+    }
+
+    return apiRequest<Competition>(`/api/v1/competitions/${id}/with-files`, {
+      method: 'PUT',
+      body: formData,
+      requireAuth: true,
+    });
   }
 }
 

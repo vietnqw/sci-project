@@ -57,6 +57,19 @@ class Settings(BaseSettings):
         description="Comma-separated list of allowed origins for CORS",
     )
 
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: str | None = Field(default=None, description="AWS Access Key ID")
+    AWS_SECRET_ACCESS_KEY: str | None = Field(
+        default=None, description="AWS Secret Access Key"
+    )
+    AWS_REGION: str = Field(default="us-east-1", description="AWS Region")
+    S3_BUCKET_NAME: str | None = Field(default=None, description="S3 Bucket Name")
+
+    # CloudFront Configuration
+    CLOUDFRONT_BASE_URL: str | None = Field(
+        default=None, description="CloudFront distribution URL for caching S3 content"
+    )
+
     # Initial admin bootstrap (manage_database.py)
     ADMIN_EMAIL: str | None = None
     ADMIN_PASSWORD: str | None = None
@@ -76,6 +89,17 @@ class Settings(BaseSettings):
     def POSTGRES_URL_SYNC(self) -> str:
         """Synchronous PostgreSQL URL for Alembic"""
         return self.POSTGRES_URL.replace("asyncpg", "psycopg2")
+
+    @property
+    def S3_BASE_URL(self) -> str | None:
+        """Build S3 Base URL from CloudFront or AWS region and bucket name"""
+        # Use CloudFront URL if configured, otherwise generate S3 URL from bucket and region
+        if self.CLOUDFRONT_BASE_URL:
+            return self.CLOUDFRONT_BASE_URL.rstrip("/")
+
+        if not self.S3_BUCKET_NAME or not self.AWS_REGION:
+            return None
+        return f"https://{self.S3_BUCKET_NAME}.s3.{self.AWS_REGION}.amazonaws.com"
 
     # add check for secret key
     @field_validator("SECRET_KEY")
