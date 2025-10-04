@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import UserProfileForm from '../../components/user-profile-form';
 import CreateCompetitionModal from '../../components/create-competition-modal';
 import EditCompetitionModal from '../../components/edit-competition-modal';
+import ChangePasswordModal from '../../components/change-password-modal';
 import { competitionsAPI, Competition } from '../api/competitions';
 import { apiRequest, ApiError } from '../api/utils';
 import type { User } from '../api/auth';
@@ -47,6 +48,7 @@ function AccountPageContent() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
   const [activeCompetitionTab, setActiveCompetitionTab] = useState<CompetitionTabKey>('approved');
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -165,8 +167,13 @@ function AccountPageContent() {
     }
   };
 
-  const handleNavigateToChangePassword = () => {
-    router.push('/reset-password');
+  const handleChangePassword = () => {
+    setIsChangePasswordModalOpen(true);
+  };
+
+  const handleChangePasswordSuccess = () => {
+    setToast({ type: 'success', message: 'Password changed successfully!' });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleCreateCompetitionSuccess = async () => {
@@ -358,14 +365,11 @@ function AccountPageContent() {
                   </div>
                   <div className="mt-auto flex flex-col gap-2">
                     <button
-                      onClick={handleNavigateToChangePassword}
+                      onClick={handleChangePassword}
                       className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       Change Password
                     </button>
-                    <p className="text-xs text-gray-400">
-                      Need additional help? Visit our <Link href="/help" className="text-blue-600 hover:text-blue-700">help centre</Link> or contact support.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -751,6 +755,14 @@ function AccountPageContent() {
         }}
         onSuccess={handleEditCompetitionSuccess}
         competition={selectedCompetition}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+        onSuccess={handleChangePasswordSuccess}
+        userId={user?.id || ''}
       />
     </main>
   );
