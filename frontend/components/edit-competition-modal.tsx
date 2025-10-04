@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { competitionsAPI, type CompetitionCreate } from '../app/api/competitions';
+import { useState, useEffect } from 'react';
+import { competitionsAPI, type CompetitionUpdate, type Competition } from '../app/api/competitions';
 
-interface CreateCompetitionModalProps {
+interface EditCompetitionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  competition: Competition | null;
 }
 
-export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: CreateCompetitionModalProps) {
-  const [formData, setFormData] = useState<CompetitionCreate>({
+export default function EditCompetitionModal({ isOpen, onClose, onSuccess, competition }: EditCompetitionModalProps) {
+  const [formData, setFormData] = useState<CompetitionUpdate>({
     title: '',
     description: '',
     competition_link: '',
@@ -23,7 +24,25 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
+  // Populate form data when competition changes
+  useEffect(() => {
+    if (competition && isOpen) {
+      setFormData({
+        title: competition.title || '',
+        description: competition.description || '',
+        competition_link: competition.competition_link || '',
+        registration_deadline: competition.registration_deadline ?
+          new Date(competition.registration_deadline).toISOString().slice(0, 16) : '',
+        background_image_url: competition.background_image_url || '',
+        location: competition.location || '',
+        format: competition.format || undefined,
+        scale: competition.scale || undefined,
+      });
+      setErrors({});
+    }
+  }, [competition, isOpen]);
+
+  if (!isOpen || !competition) return null;
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -71,7 +90,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
     setIsSubmitting(true);
     try {
       // Prepare data for submission
-      const submitData: CompetitionCreate = {
+      const submitData: CompetitionUpdate = {
         title: formData.title,
         description: formData.description || undefined,
         competition_link: formData.competition_link || undefined,
@@ -83,25 +102,12 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
         scale: formData.scale || undefined,
       };
 
-      await competitionsAPI.createCompetition(submitData);
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        competition_link: '',
-        registration_deadline: '',
-        background_image_url: '',
-        location: '',
-        format: undefined,
-        scale: undefined,
-      });
-      setErrors({});
+      await competitionsAPI.updateCompetition(competition.id, submitData);
 
       onSuccess();
       onClose();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create competition';
+      const message = error instanceof Error ? error.message : 'Failed to update competition';
       setErrors({ submit: message });
     } finally {
       setIsSubmitting(false);
@@ -130,8 +136,8 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Create New Competition</h2>
-              <p className="text-sm text-gray-600 mt-1">Fill in the details to create a new competition</p>
+              <h2 className="text-2xl font-bold text-gray-900">Edit Competition</h2>
+              <p className="text-sm text-gray-600 mt-1">Update the details of your competition</p>
             </div>
             <button
               onClick={handleClose}
@@ -319,14 +325,14 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating...
+                  Updating...
                 </>
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Create Competition
+                  Update Competition
                 </>
               )}
             </button>

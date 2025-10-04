@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import UserProfileForm from '../../components/user-profile-form';
 import CreateCompetitionModal from '../../components/create-competition-modal';
+import EditCompetitionModal from '../../components/edit-competition-modal';
 import { competitionsAPI, Competition } from '../api/competitions';
 import { apiRequest, ApiError } from '../api/utils';
 import type { User } from '../api/auth';
@@ -43,6 +44,8 @@ function AccountPageContent() {
   const [competitionStatusFilter, setCompetitionStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [competitionSortBy, setCompetitionSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
   const [activeCompetitionTab, setActiveCompetitionTab] = useState<CompetitionTabKey>('approved');
 
   useEffect(() => {
@@ -168,6 +171,17 @@ function AccountPageContent() {
 
   const handleCreateCompetitionSuccess = async () => {
     setToast({ type: 'success', message: 'Competition created successfully!' });
+    setTimeout(() => setToast(null), 3000);
+    await fetchUserCompetitions();
+  };
+
+  const handleEditCompetition = (competition: Competition) => {
+    setSelectedCompetition(competition);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditCompetitionSuccess = async () => {
+    setToast({ type: 'success', message: 'Competition updated successfully!' });
     setTimeout(() => setToast(null), 3000);
     await fetchUserCompetitions();
   };
@@ -613,7 +627,7 @@ function AccountPageContent() {
                               View
                             </Link>
                             <button
-                              onClick={() => router.push(`/competitions/${competition.id}/edit`)}
+                              onClick={() => handleEditCompetition(competition)}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
                             >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -725,6 +739,16 @@ function AccountPageContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCreateCompetitionSuccess}
+      />
+
+      <EditCompetitionModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedCompetition(null);
+        }}
+        onSuccess={handleEditCompetitionSuccess}
+        competition={selectedCompetition}
       />
     </main>
   );
