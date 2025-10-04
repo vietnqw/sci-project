@@ -221,15 +221,29 @@ async def list_competitions_by_user(
 
 @router.get("/detail/{competition_id}", response_model=CompetitionResponse)
 async def get_competition(
-    competition_id: UUID, db: AsyncSession = Depends(get_db)
+    competition_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_optional_user),
 ) -> CompetitionResponse:
     """
     Get competition detail by ID.
 
     Permissions:
-        - Public
+        - Public for approved competitions
+        - Only owner and admin for pending/rejected competitions
     """
     comp = await _get_competition_or_404(db, competition_id)
+
+    # Check access permissions for pending/rejected competitions
+    user_role = getattr(current_user, "role", None) if current_user else None
+    user_id = getattr(current_user, "id", None) if current_user else None
+
+    # If competition is not approved, only owner and admin can access
+    if not comp.is_approved:
+        is_admin = user_role == UserRole.ADMIN
+        is_owner = user_id == comp.owner_id
+        if not is_admin and not is_owner:
+            raise CompetitionNotFoundError()
 
     # Get owner information if exists
     owner_summary = None

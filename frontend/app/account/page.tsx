@@ -537,11 +537,16 @@ function AccountPageContent() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                                     <h3 className="text-base font-semibold text-gray-900 truncate">{competition.title}</h3>
-                                    {/* Status badges based on approval and active status */}
+                                    {/* Status badges - for pending competitions, only show Pending status */}
                                     {competition.is_approved ? (
-                                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 ring-1 ring-green-300 flex-shrink-0">
-                                        ✓ Approved
-                                      </span>
+                                      <>
+                                        <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 ring-1 ring-green-300 flex-shrink-0">
+                                          ✓ Approved
+                                        </span>
+                                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex-shrink-0 ${competition.is_active ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-gray-100 text-gray-700 ring-1 ring-gray-300'}`}>
+                                          {competition.is_active ? '● Active' : '○ Inactive'}
+                                        </span>
+                                      </>
                                     ) : competition.is_rejected ? (
                                       <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 ring-1 ring-red-300 flex-shrink-0">
                                         ✗ Rejected
@@ -551,9 +556,6 @@ function AccountPageContent() {
                                         ⏳ Pending
                                       </span>
                                     )}
-                                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex-shrink-0 ${competition.is_active ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-gray-100 text-gray-700 ring-1 ring-gray-300'}`}>
-                                      {competition.is_active ? '● Active' : '○ Inactive'}
-                                    </span>
                                     {competition.is_featured && (
                                       <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700 ring-1 ring-yellow-300 flex-shrink-0">
                                         ⭐ Featured

@@ -53,25 +53,30 @@ async def get_optional_user(
 ) -> User | None:
     """Resolve current user if Authorization header is present; otherwise return None.
 
-    If an Authorization header is provided but invalid, raise NotAuthenticatedError.
+    If an Authorization header is provided but invalid, return None (treat as unauthenticated).
     """
     if authorization is None:
         return None
-    token = _parse_bearer_token(authorization)
-    user_id_str = verify_token(token)
-    if user_id_str is None:
-        raise InvalidTokenError()
+
     try:
-        user_id = UUID(user_id_str)
+        token = _parse_bearer_token(authorization)
+        user_id_str = verify_token(token)
+        if user_id_str is None:
+            return None  # Invalid token, treat as unauthenticated
+        try:
+            user_id = UUID(user_id_str)
+        except Exception:
+            return None  # Invalid token subject, treat as unauthenticated
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if user is None:
+            return None  # User not found, treat as unauthenticated
+        if not user.is_active:
+            return None  # Inactive user, treat as unauthenticated
+        return user
     except Exception:
-        raise InvalidTokenError("Invalid token subject")
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if user is None:
-        raise InvalidTokenError("User not found")
-    if not user.is_active:
-        raise InactiveUserError()
-    return user
+        # Any other error (like invalid token format), treat as unauthenticated
+        return None
 
 
 async def get_current_admin_user(

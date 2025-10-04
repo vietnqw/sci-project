@@ -127,7 +127,9 @@ class CompetitionsAPI {
   }
 
   async getCompetition(id: string): Promise<Competition> {
-    return apiRequest<Competition>(`/api/v1/competitions/detail/${id}`);
+    return apiRequest<Competition>(`/api/v1/competitions/detail/${id}`, {
+      requireAuth: true,
+    });
   }
 
   async createCompetition(data: CompetitionCreate): Promise<Competition> {

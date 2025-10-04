@@ -400,8 +400,16 @@ function AdminCompetitionsPageContent() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Badge color={c.is_approved ? 'blue' : (c.is_rejected ? 'red' : 'orange')} label={c.is_approved ? 'Approved' : (c.is_rejected ? 'Rejected' : 'Pending')} />
-                            <Badge color={c.is_active ? 'green' : 'red'} label={c.is_active ? 'Active' : 'Inactive'} />
+                            {c.is_approved ? (
+                              <>
+                                <Badge color="blue" label="Approved" />
+                                <Badge color={c.is_active ? 'green' : 'red'} label={c.is_active ? 'Active' : 'Inactive'} />
+                              </>
+                            ) : c.is_rejected ? (
+                              <Badge color="red" label="Rejected" />
+                            ) : (
+                              <Badge color="orange" label="Pending" />
+                            )}
                             {c.is_featured && <Badge color="amber" label="Featured" />}
                           </div>
                         </td>

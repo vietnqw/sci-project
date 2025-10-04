@@ -50,10 +50,10 @@ export async function apiRequest<T>(
 
   if (requireAuth) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) {
-      throw new ApiError('Authentication required', 401, 'AUTH_001');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
-    headers.Authorization = `Bearer ${token}`;
+    // If no token, send request without auth header and let backend handle it
   }
 
   const config: RequestInit = {
