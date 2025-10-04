@@ -69,12 +69,11 @@ function CompetitionsPageContent() {
   const [locationFilter, setLocationFilter] = useState("");
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
-  // Pagination via URL (?page, ?limit) to keep UI identical but enable server pagination
+  // Pagination via URL (?page, ?limit) for client-side pagination
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = Math.max(1, parseInt(searchParams.get("limit") || String(DEFAULT_LIMIT), 10));
-  const skip = (page - 1) * limit;
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  // totalPages is now calculated after filtering
 
   function goToPage(p: number) {
     const clamped = Math.min(Math.max(1, p), totalPages);
@@ -115,12 +114,13 @@ function CompetitionsPageContent() {
         const apiFormat = modeFilter ? modeFilter.toUpperCase() : undefined;
         const apiScale = scaleFilter ? scaleFilter.toUpperCase() : undefined;
         const resp: any = await competitionsAPI.getPublicCompetitions({
-          skip,
-          limit,
-          search: search || undefined,
+          // Fetch all competitions for client-side filtering and pagination
+          skip: 0,
+          limit: 1000, // Large limit to get all competitions
           scale: apiScale as any,
           format: apiFormat as any,
-          location: locationFilter || undefined,
+          // Remove location from server-side filtering to prevent page reloads
+          // location: locationFilter || undefined,
           is_approved: true, // Only show approved competitions
           is_active: true,   // Only show active competitions
         });
@@ -138,7 +138,7 @@ function CompetitionsPageContent() {
     return () => {
       ignore = true;
     };
-  }, [skip, limit, search, scaleFilter, modeFilter, locationFilter]);
+  }, [scaleFilter, modeFilter]); // Removed pagination and location dependencies since we fetch all data
 
   // Build options from current page data (same behavior as old UI)
   const { scales, modes, locations } = useMemo(() => {
@@ -150,17 +150,28 @@ function CompetitionsPageContent() {
     return { scales: s, modes: m, locations: l };
   }, [items]);
 
-  // Client-side filtering remains for identical UI behavior (on top of server filters)
+  // Client-side filtering and pagination
   const filtered = useMemo(() => {
     const display = items.map(mapCompetitionToDisplay);
     return display.filter((c) => {
       const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.overview.toLowerCase().includes(search.toLowerCase());
       const matchesScale = !scaleFilter || c.scale === scaleFilter;
       const matchesMode = !modeFilter || c.modes.includes(modeFilter);
-      const matchesLocation = !locationFilter || c.location === locationFilter;
+      const matchesLocation = !locationFilter || c.location.toLowerCase().includes(locationFilter.toLowerCase());
       return matchesSearch && matchesScale && matchesMode && matchesLocation;
     });
   }, [items, search, scaleFilter, modeFilter, locationFilter]);
+
+  // Client-side pagination
+  const paginatedItems = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filtered.slice(startIndex, endIndex);
+  }, [filtered, page, limit]);
+
+  // Update total count based on filtered results
+  const filteredTotalCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filteredTotalCount / limit));
 
   // Loading state
   if (loading) {
@@ -228,10 +239,10 @@ function CompetitionsPageContent() {
             <p className="text-gray-600">Find the perfect competition for you</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Search Input */}
-            <div className="space-y-2">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700">Search</label>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Input - Largest */}
+            <div className="flex-1 space-y-2">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700">Search competitions</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,8 +261,22 @@ function CompetitionsPageContent() {
               </div>
             </div>
 
+            {/* Location Filter */}
+            <div className="w-full sm:w-48 space-y-2">
+              <label htmlFor="location-filter" className="block text-sm font-medium text-gray-700">Location</label>
+              <input
+                id="location-filter"
+                type="text"
+                placeholder="Search by location..."
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors bg-white hover:border-gray-400"
+                aria-label="Filter by location"
+              />
+            </div>
+
             {/* Scale Filter */}
-            <div className="space-y-2">
+            <div className="w-full sm:w-40 space-y-2">
               <label htmlFor="scale-filter" className="block text-sm font-medium text-gray-700">Scale</label>
               <div className="relative">
                 <select
@@ -274,29 +299,8 @@ function CompetitionsPageContent() {
               </div>
             </div>
 
-            {/* Location Filter */}
-            <div className="space-y-2">
-              <label htmlFor="location-filter" className="block text-sm font-medium text-gray-700">Location</label>
-              <input
-                id="location-filter"
-                type="text"
-                placeholder="Type or select location..."
-                value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors bg-white hover:border-gray-400"
-                aria-label="Filter by location"
-                list="location-options"
-              />
-              <datalist id="location-options">
-                <option value="">All locations</option>
-                {locations.map((l) => (
-                  <option key={l} value={l} />
-                ))}
-              </datalist>
-            </div>
-
             {/* Mode Filter */}
-            <div className="space-y-2">
+            <div className="w-full sm:w-40 space-y-2">
               <label htmlFor="mode-filter" className="block text-sm font-medium text-gray-700">Mode</label>
               <div className="relative">
                 <select
@@ -337,7 +341,7 @@ function CompetitionsPageContent() {
 
         {/* Competitions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          {filtered.length === 0 ? (
+          {paginatedItems.length === 0 ? (
             <div className="col-span-full text-center text-gray-500 py-16 text-xl">
               <div className="bg-white rounded-xl shadow-lg p-12">
                 <div className="text-6xl mb-4">🔍</div>
@@ -346,7 +350,7 @@ function CompetitionsPageContent() {
               </div>
             </div>
           ) : (
-            filtered.map((c) => (
+            paginatedItems.map((c) => (
               <Link
                 key={c.id}
                 href={`/competitions/${c.id}`}
@@ -409,8 +413,8 @@ function CompetitionsPageContent() {
 
         {/* Results Count + Pagination */}
         <div className="mt-8 flex flex-col items-center gap-4 text-gray-600">
-          {filtered.length > 0 && (
-            <p className="text-lg">Showing {filtered.length} of {totalCount} competitions</p>
+          {paginatedItems.length > 0 && (
+            <p className="text-lg">Showing {paginatedItems.length} of {filteredTotalCount} competitions</p>
           )}
           {totalPages > 1 && (
             <nav className="flex items-center gap-2" aria-label="Pagination">
