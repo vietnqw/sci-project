@@ -21,6 +21,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
   const [selectedImageAlt, setSelectedImageAlt] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Not specified';
@@ -33,9 +34,9 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
 
   const formatAgeRange = (min?: number, max?: number) => {
     if (!min && !max) return 'All ages';
-    if (min && max) return `${min}-${max} years`;
-    if (min) return `${min}+ years`;
-    if (max) return `Up to ${max} years`;
+    if (min && max) return `${min}-${max}`;
+    if (min) return `${min}+`;
+    if (max) return `Under ${max + 1}`;
     return 'All ages';
   };
 
@@ -70,6 +71,40 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
     setSelectedImageUrl(imageUrl);
     setSelectedImageAlt(alt);
     setIsImageModalOpen(true);
+  };
+
+  const handleModalPrevious = () => {
+    if (competition.detail_image_urls && competition.detail_image_urls.length > 0) {
+      const newIndex = currentImageIndex === 0 ? competition.detail_image_urls.length - 1 : currentImageIndex - 1;
+      setCurrentImageIndex(newIndex);
+      setSelectedImageUrl(competition.detail_image_urls[newIndex]);
+      setSelectedImageAlt(`${competition.title} detail ${newIndex + 1}`);
+    }
+  };
+
+  const handleModalNext = () => {
+    if (competition.detail_image_urls && competition.detail_image_urls.length > 0) {
+      const newIndex = currentImageIndex === competition.detail_image_urls.length - 1 ? 0 : currentImageIndex + 1;
+      setCurrentImageIndex(newIndex);
+      setSelectedImageUrl(competition.detail_image_urls[newIndex]);
+      setSelectedImageAlt(`${competition.title} detail ${newIndex + 1}`);
+    }
+  };
+
+  const handlePreviousImage = () => {
+    if (competition.detail_image_urls && competition.detail_image_urls.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? competition.detail_image_urls.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleNextImage = () => {
+    if (competition.detail_image_urls && competition.detail_image_urls.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === competition.detail_image_urls.length - 1 ? 0 : prev + 1
+      );
+    }
   };
 
   const closeImageModal = () => {
@@ -188,6 +223,12 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
                       <span className="text-lg">{competition.location}</span>
                     </div>
                   )}
+
+                  {competition.overview && (
+                    <div className="text-gray-600 text-lg leading-relaxed mb-4">
+                      {competition.overview}
+                    </div>
+                  )}
                 </div>
 
                 {/* Quick Actions */}
@@ -231,16 +272,73 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
             {competition.detail_image_urls && competition.detail_image_urls.length > 0 && (
               <div className="rounded-xl shadow-lg p-8 mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Competition Images</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {competition.detail_image_urls.map((imageUrl, index) => (
-                    <div key={index} className="relative cursor-pointer" onClick={() => handleImageClick(imageUrl, `${competition.title} detail ${index + 1}`)}>
-                      <img
-                        src={imageUrl}
-                        alt={`${competition.title} detail ${index + 1}`}
-                        className="w-full h-64 object-cover rounded-lg border border-gray-200 hover:border-blue-300 transition-colors shadow-md"
-                      />
+                <div className="relative">
+                  {/* Main Image Display */}
+                  <div className="relative overflow-hidden rounded-lg">
+                    <img
+                      src={competition.detail_image_urls[currentImageIndex]}
+                      alt={`${competition.title} detail ${currentImageIndex + 1}`}
+                      className="w-full h-80 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                      onClick={() => handleImageClick(competition.detail_image_urls[currentImageIndex], `${competition.title} detail ${currentImageIndex + 1}`)}
+                    />
+
+                    {/* Navigation Arrows */}
+                    {competition.detail_image_urls.length > 1 && (
+                      <>
+                        {/* Left Arrow */}
+                        <button
+                          onClick={handlePreviousImage}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 group"
+                          aria-label="Previous image"
+                        >
+                          <svg className="w-6 h-6 text-gray-700 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+
+                        {/* Right Arrow */}
+                        <button
+                          onClick={handleNextImage}
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 group"
+                          aria-label="Next image"
+                        >
+                          <svg className="w-6 h-6 text-gray-700 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+
+                    {/* Image Counter */}
+                    {competition.detail_image_urls.length > 1 && (
+                      <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {currentImageIndex + 1} / {competition.detail_image_urls.length}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnail Strip */}
+                  {competition.detail_image_urls.length > 1 && (
+                    <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                      {competition.detail_image_urls.map((imageUrl, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                            index === currentImageIndex
+                              ? 'border-blue-500 shadow-lg'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`${competition.title} thumbnail ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
@@ -297,6 +395,16 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
                     </p>
                   </div>
                 </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <div>
+                      <p className="text-sm text-gray-500">Age</p>
+                      <p className="font-semibold text-gray-900">
+                        {formatAgeRange(competition.min_age, competition.max_age)}
+                      </p>
+                    </div>
+                  </div>
               </div>
             </div>
 
@@ -343,6 +451,10 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
         onClose={closeImageModal}
         imageUrl={selectedImageUrl}
         alt={selectedImageAlt}
+        allImages={competition.detail_image_urls}
+        currentIndex={currentImageIndex}
+        onPrevious={competition.detail_image_urls && competition.detail_image_urls.length > 1 ? handleModalPrevious : undefined}
+        onNext={competition.detail_image_urls && competition.detail_image_urls.length > 1 ? handleModalNext : undefined}
       />
 
       {/* Edit Competition Modal */}

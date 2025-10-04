@@ -10,6 +10,7 @@ export interface UserSummary {
 export interface Competition {
   id: string;
   title: string;
+  overview?: string;
   description?: string;
   competition_link?: string;
   registration_deadline?: string;
@@ -18,6 +19,8 @@ export interface Competition {
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
+  min_age?: number;
+  max_age?: number;
   owner_id: string;
   owner?: UserSummary;
   is_active: boolean;
@@ -38,6 +41,7 @@ export interface CompetitionListResponse {
 
 export interface CompetitionCreate {
   title: string;
+  overview?: string;
   description?: string;
   competition_link?: string;
   registration_deadline?: string;
@@ -46,10 +50,13 @@ export interface CompetitionCreate {
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
+  min_age?: number;
+  max_age?: number;
 }
 
 export interface CompetitionUpdate {
   title?: string;
+  overview?: string;
   description?: string;
   competition_link?: string;
   registration_deadline?: string;
@@ -58,6 +65,8 @@ export interface CompetitionUpdate {
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
+  min_age?: number;
+  max_age?: number;
 }
 
 class CompetitionsAPI {
