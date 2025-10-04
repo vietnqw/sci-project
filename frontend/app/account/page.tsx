@@ -8,7 +8,7 @@ import UserProfileForm from '../../components/user-profile-form';
 import CreateCompetitionModal from '../../components/create-competition-modal';
 import EditCompetitionModal from '../../components/edit-competition-modal';
 import ChangePasswordModal from '../../components/change-password-modal';
-import { competitionsAPI, Competition } from '../api/competitions';
+import { competitionsAPI, Competition, formatLocation } from '../api/competitions';
 import { apiRequest, ApiError } from '../api/utils';
 import type { User } from '../api/auth';
 
@@ -235,7 +235,7 @@ function AccountPageContent() {
       // Search filter
       const matchesSearch = !competitionSearch ||
         comp.title.toLowerCase().includes(competitionSearch.toLowerCase()) ||
-        comp.location?.toLowerCase().includes(competitionSearch.toLowerCase());
+        formatLocation(comp).toLowerCase().includes(competitionSearch.toLowerCase());
 
       // Status filter
       const matchesStatus = competitionStatusFilter === 'all' ||
@@ -572,7 +572,7 @@ function AccountPageContent() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                       </svg>
-                                      {competition.location}
+                                      {formatLocation(competition)}
                               </span>
                                     <span className="capitalize">{competition.format?.toLowerCase() || 'N/A'}</span>
                                     <span className="capitalize">{competition.scale?.toLowerCase() || 'N/A'}</span>

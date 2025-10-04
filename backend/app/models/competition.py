@@ -30,11 +30,12 @@ class Competition(Base):
     registration_deadline = Column(DateTime(timezone=True), nullable=True)
     background_image_url = Column(String(500), nullable=True)
     detail_image_urls = Column(String(5000), nullable=False, default="[]")
-    location = Column(String(255), nullable=False)
+    location_country = Column(String(255), nullable=False)
+    location_city = Column(String(255), nullable=False)
     format = Column(String(20), nullable=True)
     scale = Column(String(20), nullable=True)
-    min_age = Column(Integer, nullable=False)
-    max_age = Column(Integer, nullable=False)
+    min_age = Column(Integer, nullable=True)
+    max_age = Column(Integer, nullable=True)
 
     # Ownership and status
     owner_id = Column(
@@ -69,12 +70,25 @@ class Competition(Base):
             name="ck_description_length",
         ),
         CheckConstraint(
-            "LENGTH(location) >= 1 AND LENGTH(location) <= 255",
-            name="ck_location_length",
+            "LENGTH(location_country) >= 1 AND LENGTH(location_country) <= 255",
+            name="ck_location_country_length",
         ),
-        CheckConstraint("min_age >= 1 AND min_age <= 128", name="ck_min_age_range"),
-        CheckConstraint("max_age >= 1 AND max_age <= 128", name="ck_max_age_range"),
-        CheckConstraint("max_age >= min_age", name="ck_max_age_gte_min_age"),
+        CheckConstraint(
+            "LENGTH(location_city) >= 1 AND LENGTH(location_city) <= 255",
+            name="ck_location_city_length",
+        ),
+        CheckConstraint(
+            "min_age IS NULL OR (min_age >= 1 AND min_age <= 128)",
+            name="ck_min_age_range",
+        ),
+        CheckConstraint(
+            "max_age IS NULL OR (max_age >= 1 AND max_age <= 128)",
+            name="ck_max_age_range",
+        ),
+        CheckConstraint(
+            "min_age IS NULL OR max_age IS NULL OR max_age >= min_age",
+            name="ck_max_age_gte_min_age",
+        ),
     )
 
     @property

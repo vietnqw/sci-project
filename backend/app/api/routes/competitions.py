@@ -78,8 +78,10 @@ async def list_competitions(
         # Unauthenticated users can only see approved and active competitions
         conditions.append(Competition.is_active)
 
-    if params.location:
-        conditions.append(Competition.location == params.location)
+    if params.location_country:
+        conditions.append(Competition.location_country == params.location_country)
+    if params.location_city:
+        conditions.append(Competition.location_city == params.location_city)
     if params.format is not None:
         conditions.append(Competition.format == params.format)
     if params.scale is not None:
@@ -168,8 +170,10 @@ async def list_competitions_by_user(
         )
 
     conditions = [Competition.owner_id == user_id]
-    if params.location:
-        conditions.append(Competition.location == params.location)
+    if params.location_country:
+        conditions.append(Competition.location_country == params.location_country)
+    if params.location_city:
+        conditions.append(Competition.location_city == params.location_city)
     if params.format is not None:
         conditions.append(Competition.format == params.format)
     if params.scale is not None:
@@ -284,8 +288,10 @@ async def list_pending_competitions(
         ~Competition.is_rejected,  # Not rejected (still pending)
     ]
 
-    if params.location:
-        conditions.append(Competition.location == params.location)
+    if params.location_country:
+        conditions.append(Competition.location_country == params.location_country)
+    if params.location_city:
+        conditions.append(Competition.location_city == params.location_city)
     if params.format is not None:
         conditions.append(Competition.format == params.format)
     if params.scale is not None:
@@ -363,9 +369,12 @@ async def create_competition(
         background_image_url=(
             str(payload.background_image_url) if payload.background_image_url else None
         ),
-        location=payload.location,
+        location_country=payload.location_country,
+        location_city=payload.location_city,
         format=payload.format,
         scale=payload.scale,
+        min_age=payload.min_age,
+        max_age=payload.max_age,
         owner_id=current_user.id,
         is_active=True,
         is_featured=False,
@@ -420,12 +429,23 @@ async def update_competition(
         "title",
         "description",
         "registration_deadline",
-        "location",
         "format",
         "scale",
     ):
         if field in data:
             setattr(comp, field, data[field])
+
+    # Handle location fields separately
+    if "location_country" in data:
+        comp.location_country = data["location_country"]
+    if "location_city" in data:
+        comp.location_city = data["location_city"]
+
+    # Handle age fields separately
+    if "min_age" in data:
+        comp.min_age = data["min_age"]
+    if "max_age" in data:
+        comp.max_age = data["max_age"]
     # Optional URL fields
     if "competition_link" in data:
         comp.competition_link = (

@@ -241,7 +241,8 @@ def load_dummy_data(session: SyncSession, path: str) -> int:
                 cd.get("registration_deadline")
             ),  # SQLAlchemy will parse ISO string
             background_image_url=cd.get("background_image_url"),
-            location=cd.get("location"),
+            location_country=cd.get("location_country"),
+            location_city=cd.get("location_city"),
             format=cd.get("format"),
             scale=cd.get("scale"),
             min_age=cd.get("min_age"),

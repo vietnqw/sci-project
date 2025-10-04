@@ -4,9 +4,7 @@ import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
-import { competitionsAPI } from "../api/competitions";
-
-type AnyCompetition = Record<string, any>;
+import { competitionsAPI, formatLocation, type Competition } from "../api/competitions";
 
 const DEFAULT_LIMIT = 12;
 
@@ -20,7 +18,7 @@ function isValidImageUrl(url: string | undefined): boolean {
   }
 }
 
-function getFallbackImage(comp: AnyCompetition): string {
+function getFallbackImage(comp: Competition): string {
   const title = String(comp?.title ?? "").toLowerCase();
   if (title.includes("mathematical") || title.includes("imo")) return "/assets/logos/IMO_logo.svg";
   if (title.includes("robotics") || title.includes("first")) return "/assets/logos/FIRST_Robotics_Competition_(logo).svg.png";
@@ -30,8 +28,8 @@ function getFallbackImage(comp: AnyCompetition): string {
   return "/assets/logos/logoWeb.png";
 }
 
-function mapCompetitionToDisplay(competition: AnyCompetition) {
-  const desc: string = competition?.overview || competition?.description || competition?.introduction || "No description available";
+function mapCompetitionToDisplay(competition: Competition) {
+  const desc: string = competition?.description || "No description available";
   const scaleRaw: string | undefined = competition?.scale;
   const formatRaw: string | undefined = competition?.format;
 
@@ -46,7 +44,7 @@ function mapCompetitionToDisplay(competition: AnyCompetition) {
     name: competition.title,
     overview: desc,
     scale: scaleRaw ? toTitle(scaleRaw) : "Unknown",
-    location: competition?.location || "Unknown",
+    location: formatLocation(competition),
     modes: formatRaw ? [toTitle(formatRaw)] : ["Unknown"],
     homepage: competition?.competition_link || "#",
     image: imageUrl,
@@ -59,7 +57,7 @@ function CompetitionsPageContent() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<AnyCompetition[]>([]);
+  const [items, setItems] = useState<Competition[]>([]);
   const [totalCount, setTotalCount] = useState(0);
 
   // Filters & query
@@ -146,7 +144,7 @@ function CompetitionsPageContent() {
     const toTitle = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "");
     const s = Array.from(new Set(items.map((c) => (c?.scale ? toTitle(c.scale) : "")).filter(Boolean)));
     const m = Array.from(new Set(items.map((c) => (c?.format ? toTitle(c.format) : "")).filter(Boolean)));
-    const l = Array.from(new Set(items.map((c) => c?.location).filter(Boolean)));
+    const l = Array.from(new Set(items.map((c) => formatLocation(c)).filter(Boolean)));
     return { scales: s, modes: m, locations: l };
   }, [items]);
 

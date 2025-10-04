@@ -62,11 +62,12 @@ class CompetitionBase(CompetitionValidationMixin, BaseModel):
     detail_image_urls: list[str] = Field(
         default_factory=list, description="List of detail image URLs"
     )
-    location: str = Field(..., min_length=1, max_length=255)
+    location_country: str = Field(..., min_length=1, max_length=255)
+    location_city: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int = Field(..., ge=1, le=128)
-    max_age: int = Field(..., ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=1, le=128)
+    max_age: int | None = Field(default=None, ge=1, le=128)
 
 
 class CompetitionCreate(CompetitionBase):
@@ -83,7 +84,8 @@ class CompetitionUpdate(CompetitionValidationMixin, BaseModel):
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None
     detail_image_urls: list[str] | None = None
-    location: str | None = Field(default=None, min_length=1, max_length=255)
+    location_country: str | None = Field(default=None, min_length=1, max_length=255)
+    location_city: str | None = Field(default=None, min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
     min_age: int | None = Field(default=None, ge=1, le=128)
@@ -105,11 +107,12 @@ class CompetitionResponse(BaseModel):
     detail_image_urls: list[str] = Field(
         default_factory=list, description="List of detail image URLs"
     )
-    location: str = Field(..., min_length=1, max_length=255)
+    location_country: str = Field(..., min_length=1, max_length=255)
+    location_city: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int = Field(..., ge=1, le=128)
-    max_age: int = Field(..., ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=1, le=128)
+    max_age: int | None = Field(default=None, ge=1, le=128)
     owner_id: UUID | None = None
     owner: UserSummary | None = None
     is_active: bool
@@ -150,7 +153,8 @@ class CompetitionResponse(BaseModel):
             registration_deadline=comp.registration_deadline,
             background_image_url=background_image_url,
             detail_image_urls=comp.detail_image_urls_list,
-            location=comp.location,
+            location_country=comp.location_country,
+            location_city=comp.location_city,
             format=comp.format,  # type: ignore[assignment]
             scale=comp.scale,  # type: ignore[assignment]
             min_age=comp.min_age,
@@ -183,8 +187,11 @@ class CompetitionFilterParams(BaseModel):
     limit: int = Field(
         default=100, ge=1, le=1000, description="Number of competitions to return"
     )
-    location: str | None = Field(
-        default=None, description="Location of the competition"
+    location_country: str | None = Field(
+        default=None, description="Country of the competition"
+    )
+    location_city: str | None = Field(
+        default=None, description="City of the competition"
     )
     format: CompetitionFormat | None = Field(
         default=None, description="Format of the competition"
@@ -236,11 +243,12 @@ class CompetitionCreateWithFiles(CompetitionValidationMixin, BaseModel):
     description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
-    location: str = Field(..., min_length=1, max_length=255)
+    location_country: str = Field(..., min_length=1, max_length=255)
+    location_city: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int = Field(..., ge=1, le=128)
-    max_age: int = Field(..., ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=1, le=128)
+    max_age: int | None = Field(default=None, ge=1, le=128)
 
     # File uploads
     background_image: UploadFile | None = None
@@ -257,7 +265,8 @@ class CompetitionUpdateWithFiles(CompetitionValidationMixin, BaseModel):
     description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
-    location: str | None = Field(default=None, min_length=1, max_length=255)
+    location_country: str | None = Field(default=None, min_length=1, max_length=255)
+    location_city: str | None = Field(default=None, min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
     min_age: int | None = Field(default=None, ge=1, le=128)

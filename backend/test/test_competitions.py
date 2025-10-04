@@ -33,7 +33,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
             "https://example.org/images/detail1.png",
             "https://example.org/images/detail2.png",
         ],
-        "location": "Hanoi",
+        "location_country": "Vietnam",
+        "location_city": "Hanoi",
         "format": "ONLINE",
         "scale": "REGIONAL",
         "min_age": 12,
@@ -100,7 +101,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
         "detail_image_urls": [
             "https://example.org/images/admin-detail1.png",
         ],
-        "location": "Admin City",
+        "location_country": "Vietnam",
+        "location_city": "Admin City",
         "format": "HYBRID",
         "scale": "INTERNATIONAL",
         "min_age": 16,
@@ -189,7 +191,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
         "title": "Test Pending Competition",
         "overview": "A test competition for security testing",
         "description": "A test competition designed for security testing purposes.",
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "format": "ONLINE",
         "scale": "PROVINCIAL",
         "min_age": 14,
@@ -241,7 +244,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Test title length validation
     payload = {
         "title": "",  # Empty title should fail
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 10,
         "max_age": 20,
     }
@@ -250,7 +254,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
 
     payload = {
         "title": "A" * 256,  # Too long title should fail
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 10,
         "max_age": 20,
     }
@@ -260,7 +265,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Test location length validation
     payload = {
         "title": "Valid Title",
-        "location": "",  # Empty location should fail
+        "location_country": "",  # Empty location should fail
+        "location_city": "",
         "min_age": 10,
         "max_age": 20,
     }
@@ -270,7 +276,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Test age validation
     payload = {
         "title": "Valid Title",
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 0,  # Too low should fail
         "max_age": 20,
     }
@@ -279,7 +286,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
 
     payload = {
         "title": "Valid Title",
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 10,
         "max_age": 129,  # Too high should fail
     }
@@ -289,7 +297,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Test max_age >= min_age validation
     payload = {
         "title": "Valid Title",
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 20,
         "max_age": 10,  # max_age < min_age should fail
     }
@@ -299,7 +308,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Test description length validation
     payload = {
         "title": "Valid Title",
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 10,
         "max_age": 20,
         "description": "A" * 8001,  # Too long description should fail
@@ -310,7 +320,8 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Test overview length validation
     payload = {
         "title": "Valid Title",
-        "location": "Test City",
+        "location_country": "Vietnam",
+        "location_city": "Test City",
         "min_age": 10,
         "max_age": 20,
         "overview": "A" * 256,  # Too long overview should fail

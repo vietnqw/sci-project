@@ -16,7 +16,8 @@ export interface Competition {
   registration_deadline?: string;
   background_image_url?: string;
   detail_image_urls?: string[];
-  location?: string;
+  location_country?: string;
+  location_city?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
   min_age?: number;
@@ -47,7 +48,8 @@ export interface CompetitionCreate {
   registration_deadline?: string;
   background_image_url?: string;
   detail_image_urls?: string[];
-  location?: string;
+  location_country?: string;
+  location_city?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
   min_age?: number;
@@ -62,7 +64,8 @@ export interface CompetitionUpdate {
   registration_deadline?: string;
   background_image_url?: string;
   detail_image_urls?: string[];
-  location?: string;
+  location_country?: string;
+  location_city?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
   min_age?: number;
@@ -74,8 +77,9 @@ class CompetitionsAPI {
     skip?: number;
     limit?: number;
     format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-    scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
-    location?: string;
+    scale?: 'PROVINCIAL' | 'REGIONAL' | 'NATIONAL' | 'INTERNATIONAL';
+    location_country?: string;
+    location_city?: string;
     search?: string;
     is_active?: boolean;
     is_featured?: boolean;
@@ -100,8 +104,9 @@ class CompetitionsAPI {
     skip?: number;
     limit?: number;
     format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-    scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL';
-    location?: string;
+    scale?: 'PROVINCIAL' | 'REGIONAL' | 'NATIONAL' | 'INTERNATIONAL';
+    location_country?: string;
+    location_city?: string;
     search?: string;
     is_active?: boolean;
     is_featured?: boolean;
@@ -328,7 +333,8 @@ class CompetitionsAPI {
     if (data.description) formData.append('description', data.description);
     if (data.competition_link) formData.append('competition_link', data.competition_link);
     if (data.registration_deadline) formData.append('registration_deadline', data.registration_deadline);
-    if (data.location) formData.append('location', data.location);
+    if (data.location_country) formData.append('location_country', data.location_country);
+    if (data.location_city) formData.append('location_city', data.location_city);
     if (data.format) formData.append('format', data.format);
     if (data.scale) formData.append('scale', data.scale);
 
@@ -359,5 +365,17 @@ class CompetitionsAPI {
     });
   }
 }
+
+// Helper function to format location for display
+export const formatLocation = (competition: Competition): string => {
+  if (competition.location_country && competition.location_city) {
+    return `${competition.location_country}, ${competition.location_city}`;
+  } else if (competition.location_country) {
+    return competition.location_country;
+  } else if (competition.location_city) {
+    return competition.location_city;
+  }
+  return 'Unknown';
+};
 
 export const competitionsAPI = new CompetitionsAPI();

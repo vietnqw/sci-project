@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { competitionsAPI, type CompetitionUpdate, type Competition } from '../app/api/competitions';
+import { competitionsAPI, type CompetitionUpdate, type Competition, formatLocation } from '../app/api/competitions';
+import LocationSelector from './location-selector';
 
 interface EditCompetitionModalProps {
   isOpen: boolean;
@@ -17,9 +18,12 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
     competition_link: '',
     registration_deadline: '',
     background_image_url: '',
-    location: '',
+    location_country: '',
+    location_city: '',
     format: undefined,
     scale: undefined,
+    min_age: undefined,
+    max_age: undefined,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,9 +46,12 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
         registration_deadline: competition.registration_deadline ?
           new Date(competition.registration_deadline).toISOString().slice(0, 16) : '',
         background_image_url: competition.background_image_url || '',
-        location: competition.location || '',
+        location_country: competition.location_country || '',
+        location_city: competition.location_city || '',
         format: competition.format || undefined,
         scale: competition.scale || undefined,
+        min_age: competition.min_age || undefined,
+        max_age: competition.max_age || undefined,
       });
       setErrors({});
     }
@@ -73,8 +80,18 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
       newErrors.background_image_url = 'Please enter a valid URL';
     }
 
-    if (formData.location && formData.location.length > 100) {
-      newErrors.location = 'Location must be 100 characters or less';
+    if (!formData.location_country?.trim()) {
+      newErrors.location_country = 'Country is required';
+    }
+    if (!formData.location_city?.trim()) {
+      newErrors.location_city = 'City/State is required';
+    }
+
+    if (!formData.format) {
+      newErrors.format = 'Format is required';
+    }
+    if (!formData.scale) {
+      newErrors.scale = 'Scale is required';
     }
 
     setErrors(newErrors);
@@ -147,9 +164,12 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
         registration_deadline: formData.registration_deadline ?
           new Date(formData.registration_deadline).toISOString() : undefined,
         background_image_url: formData.background_image_url || undefined,
-        location: formData.location || undefined,
+        location_country: formData.location_country || undefined,
+        location_city: formData.location_city || undefined,
         format: formData.format || undefined,
         scale: formData.scale || undefined,
+        min_age: formData.min_age || undefined,
+        max_age: formData.max_age || undefined,
       };
 
       // Use file upload API if files are provided or being removed, otherwise use regular API
@@ -183,9 +203,12 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
       competition_link: '',
       registration_deadline: '',
       background_image_url: '',
-      location: '',
+      location_country: '',
+      location_city: '',
       format: undefined,
       scale: undefined,
+      min_age: undefined,
+      max_age: undefined,
     });
     setBackgroundImageFile(null);
     setDetailImageFiles([]);
@@ -261,74 +284,107 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
             </div>
           </div>
 
-          {/* Row: Location and Format */}
+          {/* Row: Country and City */}
+          <div>
+            <LocationSelector
+              country={formData.location_country || ''}
+              city={formData.location_city || ''}
+              onCountryChange={(country) => setFormData({ ...formData, location_country: country })}
+              onCityChange={(city) => setFormData({ ...formData, location_city: city })}
+            />
+            {errors.location_country && <p className="mt-1 text-sm text-red-500">{errors.location_country}</p>}
+            {errors.location_city && <p className="mt-1 text-sm text-red-500">{errors.location_city}</p>}
+          </div>
+
+          {/* Row: Format and Scale */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
-                Location
-              </label>
-              <input
-                id="location"
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                  errors.location ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="e.g., Online, Singapore, USA"
-                maxLength={100}
-              />
-              {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
-            </div>
-
-            <div>
               <label htmlFor="format" className="block text-sm font-semibold text-gray-700 mb-2">
-                Format
+                Format <span className="text-red-500">*</span>
               </label>
               <select
                 id="format"
                 value={formData.format || ''}
                 onChange={(e) => setFormData({ ...formData, format: e.target.value as any })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-white cursor-pointer"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-white cursor-pointer ${
+                  errors.format ? 'border-red-500' : 'border-gray-300'
+                }`}
               >
                 <option value="">Select format</option>
                 <option value="ONLINE">Online</option>
                 <option value="OFFLINE">Offline</option>
                 <option value="HYBRID">Hybrid</option>
               </select>
+              {errors.format && <p className="mt-1 text-sm text-red-500">{errors.format}</p>}
             </div>
-          </div>
 
-          {/* Row: Scale and Registration Deadline */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="scale" className="block text-sm font-semibold text-gray-700 mb-2">
-                Scale
+                Scale <span className="text-red-500">*</span>
               </label>
               <select
                 id="scale"
                 value={formData.scale || ''}
                 onChange={(e) => setFormData({ ...formData, scale: e.target.value as any })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-white cursor-pointer"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-white cursor-pointer ${
+                  errors.scale ? 'border-red-500' : 'border-gray-300'
+                }`}
               >
                 <option value="">Select scale</option>
                 <option value="REGIONAL">Regional</option>
                 <option value="INTERNATIONAL">International</option>
               </select>
+              {errors.scale && <p className="mt-1 text-sm text-red-500">{errors.scale}</p>}
+            </div>
+          </div>
+
+          {/* Row: Min Age and Max Age */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="min_age" className="block text-sm font-semibold text-gray-700 mb-2">
+                Minimum Age
+              </label>
+              <input
+                id="min_age"
+                type="number"
+                min="0"
+                max="100"
+                value={formData.min_age || ''}
+                onChange={(e) => setFormData({ ...formData, min_age: e.target.value ? parseInt(e.target.value) : undefined })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                placeholder="e.g., 16"
+              />
             </div>
 
             <div>
-              <label htmlFor="registration_deadline" className="block text-sm font-semibold text-gray-700 mb-2">
-                Registration Deadline
+              <label htmlFor="max_age" className="block text-sm font-semibold text-gray-700 mb-2">
+                Maximum Age
               </label>
               <input
-                id="registration_deadline"
-                type="datetime-local"
-                value={formData.registration_deadline}
-                onChange={(e) => setFormData({ ...formData, registration_deadline: e.target.value })}
+                id="max_age"
+                type="number"
+                min="0"
+                max="100"
+                value={formData.max_age || ''}
+                onChange={(e) => setFormData({ ...formData, max_age: e.target.value ? parseInt(e.target.value) : undefined })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                placeholder="e.g., 25"
               />
             </div>
+          </div>
+
+          {/* Row: Registration Deadline */}
+          <div>
+            <label htmlFor="registration_deadline" className="block text-sm font-semibold text-gray-700 mb-2">
+              Registration Deadline
+            </label>
+            <input
+              id="registration_deadline"
+              type="datetime-local"
+              value={formData.registration_deadline}
+              onChange={(e) => setFormData({ ...formData, registration_deadline: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            />
           </div>
 
           {/* Competition Link */}

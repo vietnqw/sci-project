@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Competition } from '../app/api/competitions';
+import { Competition, formatLocation } from '../app/api/competitions';
 import { useAuth } from '../app/contexts/AuthContext';
 import Breadcrumb from './breadcrumb';
 import CountdownClock from './countdown-clock';
@@ -94,7 +94,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
   const handlePreviousImage = () => {
     if (competition.detail_image_urls && competition.detail_image_urls.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === 0 ? competition.detail_image_urls.length - 1 : prev - 1
+        prev === 0 ? competition.detail_image_urls!.length - 1 : prev - 1
       );
     }
   };
@@ -102,7 +102,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
   const handleNextImage = () => {
     if (competition.detail_image_urls && competition.detail_image_urls.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === competition.detail_image_urls.length - 1 ? 0 : prev + 1
+        prev === competition.detail_image_urls!.length - 1 ? 0 : prev + 1
       );
     }
   };
@@ -215,12 +215,12 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
                     </div>
                   )}
 
-                  {competition.location && (
+                  {(competition.location_country || competition.location_city) && (
                     <div className="flex items-center gap-2 text-gray-600 mb-4">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-lg">{competition.location}</span>
+                      <span className="text-lg">{formatLocation(competition)}</span>
                     </div>
                   )}
 
@@ -279,7 +279,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
                       src={competition.detail_image_urls[currentImageIndex]}
                       alt={`${competition.title} detail ${currentImageIndex + 1}`}
                       className="w-full h-80 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onClick={() => handleImageClick(competition.detail_image_urls[currentImageIndex], `${competition.title} detail ${currentImageIndex + 1}`)}
+                      onClick={() => handleImageClick(competition.detail_image_urls![currentImageIndex], `${competition.title} detail ${currentImageIndex + 1}`)}
                     />
 
                     {/* Navigation Arrows */}
