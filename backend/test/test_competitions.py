@@ -22,7 +22,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
     # Owner creates a competition
     payload = {
         "title": "Junior Science Fair",
-        "description": "A friendly fair for junior students.",
+        "overview": "A friendly fair for junior students",
+        "description": "A comprehensive science fair designed for junior students to showcase their innovative projects and scientific thinking.",
         "competition_link": "https://example.org/competitions/junior-science-fair",
         "registration_deadline": (
             datetime.now(timezone.utc) + timedelta(days=30)
@@ -35,6 +36,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
         "location": "Hanoi",
         "format": "ONLINE",
         "scale": "REGIONAL",
+        "min_age": 12,
+        "max_age": 18,
     }
     resp = await client.post("/competitions", json=payload, headers=owner_auth)
     assert resp.status_code == 201, resp.text
@@ -87,7 +90,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
     # Test: Admin creates a competition and can access it
     admin_comp_payload = {
         "title": "Admin Science Fair",
-        "description": "A competition created by admin.",
+        "overview": "A competition created by admin",
+        "description": "A comprehensive science competition created by admin for international participants.",
         "competition_link": "https://example.org/competitions/admin-science-fair",
         "registration_deadline": (
             datetime.now(timezone.utc) + timedelta(days=30)
@@ -99,6 +103,8 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
         "location": "Admin City",
         "format": "HYBRID",
         "scale": "INTERNATIONAL",
+        "min_age": 16,
+        "max_age": 25,
     }
     resp = await client.post(
         "/competitions", json=admin_comp_payload, headers=admin_auth
@@ -181,10 +187,13 @@ async def test_competitions_api_flow(client, create_user, auth_header_factory):
     # First create a new pending competition for this test
     test_comp_payload = {
         "title": "Test Pending Competition",
-        "description": "A test competition for security testing.",
+        "overview": "A test competition for security testing",
+        "description": "A test competition designed for security testing purposes.",
         "location": "Test City",
         "format": "ONLINE",
         "scale": "PROVINCIAL",
+        "min_age": 14,
+        "max_age": 20,
     }
     resp = await client.post(
         "/competitions", json=test_comp_payload, headers=owner_auth
@@ -227,3 +236,84 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     # Non-admin filtering by owner_id should 403
     resp = await client.get(f"/competitions?owner_id={user.id}", headers=auth)
     assert resp.status_code == 403
+
+    # Test new field validation constraints
+    # Test title length validation
+    payload = {
+        "title": "",  # Empty title should fail
+        "location": "Test City",
+        "min_age": 10,
+        "max_age": 20,
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    payload = {
+        "title": "A" * 256,  # Too long title should fail
+        "location": "Test City",
+        "min_age": 10,
+        "max_age": 20,
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    # Test location length validation
+    payload = {
+        "title": "Valid Title",
+        "location": "",  # Empty location should fail
+        "min_age": 10,
+        "max_age": 20,
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    # Test age validation
+    payload = {
+        "title": "Valid Title",
+        "location": "Test City",
+        "min_age": 0,  # Too low should fail
+        "max_age": 20,
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    payload = {
+        "title": "Valid Title",
+        "location": "Test City",
+        "min_age": 10,
+        "max_age": 129,  # Too high should fail
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    # Test max_age >= min_age validation
+    payload = {
+        "title": "Valid Title",
+        "location": "Test City",
+        "min_age": 20,
+        "max_age": 10,  # max_age < min_age should fail
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    # Test description length validation
+    payload = {
+        "title": "Valid Title",
+        "location": "Test City",
+        "min_age": 10,
+        "max_age": 20,
+        "description": "A" * 8001,  # Too long description should fail
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422
+
+    # Test overview length validation
+    payload = {
+        "title": "Valid Title",
+        "location": "Test City",
+        "min_age": 10,
+        "max_age": 20,
+        "overview": "A" * 256,  # Too long overview should fail
+    }
+    resp = await client.post("/competitions", json=payload, headers=auth)
+    assert resp.status_code == 422

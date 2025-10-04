@@ -6,7 +6,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import UploadFile
-from pydantic import BaseModel, Field, HttpUrl, ConfigDict
+from pydantic import BaseModel, Field, HttpUrl, ConfigDict, model_validator
 from pydantic import field_validator
 
 from app.models.competition import Competition
@@ -23,6 +23,7 @@ class CompetitionScale(str, Enum):
     PROVINCIAL = "PROVINCIAL"
     REGIONAL = "REGIONAL"
     INTERNATIONAL = "INTERNATIONAL"
+    NATIONAL = "NATIONAL"
 
 
 class CompetitionValidationMixin:
@@ -39,21 +40,33 @@ class CompetitionValidationMixin:
             raise ValueError("registration_deadline must be timezone-aware")
         return value
 
+    @model_validator(mode="after")
+    def validate_age_range(self):
+        """Validate that max_age >= min_age."""
+        if hasattr(self, "min_age") and hasattr(self, "max_age"):
+            if self.min_age is not None and self.max_age is not None:
+                if self.max_age < self.min_age:
+                    raise ValueError("max_age must be greater than or equal to min_age")
+        return self
+
 
 class CompetitionBase(CompetitionValidationMixin, BaseModel):
     """Base competition schema."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=2000)
+    overview: str | None = Field(default=None, min_length=0, max_length=255)
+    description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None
     detail_image_urls: list[str] = Field(
         default_factory=list, description="List of detail image URLs"
     )
-    location: str | None = Field(default=None, max_length=100)
+    location: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
+    min_age: int = Field(..., ge=1, le=128)
+    max_age: int = Field(..., ge=1, le=128)
 
 
 class CompetitionCreate(CompetitionBase):
@@ -64,14 +77,17 @@ class CompetitionCreate(CompetitionBase):
 
 class CompetitionUpdate(CompetitionValidationMixin, BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=2000)
+    overview: str | None = Field(default=None, min_length=0, max_length=255)
+    description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None
     detail_image_urls: list[str] | None = None
-    location: str | None = Field(default=None, max_length=100)
+    location: str | None = Field(default=None, min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
+    min_age: int | None = Field(default=None, ge=1, le=128)
+    max_age: int | None = Field(default=None, ge=1, le=128)
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -81,16 +97,19 @@ class CompetitionResponse(BaseModel):
 
     id: UUID
     title: str = Field(..., min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=2000)
+    overview: str | None = Field(default=None, min_length=0, max_length=255)
+    description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None
     detail_image_urls: list[str] = Field(
         default_factory=list, description="List of detail image URLs"
     )
-    location: str | None = Field(default=None, max_length=100)
+    location: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
+    min_age: int = Field(..., ge=1, le=128)
+    max_age: int = Field(..., ge=1, le=128)
     owner_id: UUID | None = None
     owner: UserSummary | None = None
     is_active: bool
@@ -125,6 +144,7 @@ class CompetitionResponse(BaseModel):
         return cls(
             id=comp.id,
             title=comp.title,
+            overview=comp.overview,
             description=comp.description,
             competition_link=competition_link,
             registration_deadline=comp.registration_deadline,
@@ -133,6 +153,8 @@ class CompetitionResponse(BaseModel):
             location=comp.location,
             format=comp.format,  # type: ignore[assignment]
             scale=comp.scale,  # type: ignore[assignment]
+            min_age=comp.min_age,
+            max_age=comp.max_age,
             owner_id=comp.owner_id,
             owner=owner,
             is_active=comp.is_active,
@@ -206,16 +228,19 @@ class CompetitionRejectPayload(BaseModel):
     rejection_reason: str | None = None
 
 
-class CompetitionCreateWithFiles(BaseModel):
+class CompetitionCreateWithFiles(CompetitionValidationMixin, BaseModel):
     """Payload for creating a competition with file uploads."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=2000)
+    overview: str | None = Field(default=None, min_length=0, max_length=255)
+    description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
-    location: str | None = Field(default=None, max_length=100)
+    location: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
+    min_age: int = Field(..., ge=1, le=128)
+    max_age: int = Field(..., ge=1, le=128)
 
     # File uploads
     background_image: UploadFile | None = None
@@ -224,16 +249,19 @@ class CompetitionCreateWithFiles(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
-class CompetitionUpdateWithFiles(BaseModel):
+class CompetitionUpdateWithFiles(CompetitionValidationMixin, BaseModel):
     """Payload for updating a competition with file uploads."""
 
     title: str | None = Field(default=None, min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=2000)
+    overview: str | None = Field(default=None, min_length=0, max_length=255)
+    description: str | None = Field(default=None, min_length=0, max_length=8000)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
-    location: str | None = Field(default=None, max_length=100)
+    location: str | None = Field(default=None, min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
+    min_age: int | None = Field(default=None, ge=1, le=128)
+    max_age: int | None = Field(default=None, ge=1, le=128)
 
     # File uploads
     background_image: UploadFile | None = None

@@ -17,7 +17,7 @@ export interface Competition {
   detail_image_urls?: string[];
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-  scale?: 'REGIONAL' | 'INTERNATIONAL';
+  scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
   owner_id: string;
   owner?: UserSummary;
   is_active: boolean;
@@ -45,7 +45,7 @@ export interface CompetitionCreate {
   detail_image_urls?: string[];
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-  scale?: 'REGIONAL' | 'INTERNATIONAL';
+  scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
 }
 
 export interface CompetitionUpdate {
@@ -57,7 +57,7 @@ export interface CompetitionUpdate {
   detail_image_urls?: string[];
   location?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
-  scale?: 'REGIONAL' | 'INTERNATIONAL';
+  scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
 }
 
 class CompetitionsAPI {

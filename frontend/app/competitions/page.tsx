@@ -31,7 +31,7 @@ function getFallbackImage(comp: AnyCompetition): string {
 }
 
 function mapCompetitionToDisplay(competition: AnyCompetition) {
-  const desc: string = competition?.description || competition?.introduction || competition?.overview || "No description available";
+  const desc: string = competition?.overview || competition?.description || competition?.introduction || "No description available";
   const scaleRaw: string | undefined = competition?.scale;
   const formatRaw: string | undefined = competition?.format;
 
@@ -299,18 +299,18 @@ function CompetitionsPageContent() {
               </div>
             </div>
 
-            {/* Mode Filter */}
+            {/* Format Filter */}
             <div className="w-full sm:w-40 space-y-2">
-              <label htmlFor="mode-filter" className="block text-sm font-medium text-gray-700">Mode</label>
+              <label htmlFor="mode-filter" className="block text-sm font-medium text-gray-700">Format</label>
               <div className="relative">
                 <select
                   id="mode-filter"
                   value={modeFilter}
                   onChange={(e) => setModeFilter(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                  aria-label="Filter by mode"
+                  aria-label="Filter by format"
                 >
-                  <option value="">All modes</option>
+                  <option value="">All formats</option>
                   {modes.map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}

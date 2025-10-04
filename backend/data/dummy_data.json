@@ -50,6 +50,25 @@
       "is_featured": true
     },
     {
+      "title": "National Science Olympiad",
+      "overview": "Vietnam's premier national science competition for high school students.",
+      "description": "The National Science Olympiad is Vietnam's most prestigious science competition, bringing together the brightest high school students from across the country. This comprehensive competition covers all major scientific disciplines including physics, chemistry, biology, mathematics, and earth sciences. Participants will face challenging theoretical problems, practical laboratory exercises, and team-based research projects. The competition serves as the national selection process for international science olympiads, with top performers representing Vietnam at the International Science Olympiad. Students will have access to state-of-the-art laboratory facilities, expert mentors, and opportunities to collaborate with leading scientists and researchers. The event promotes scientific excellence, critical thinking, and innovation among Vietnam's future scientists and engineers.",
+      "competition_link": "https://example.org/competitions/national-science-olympiad",
+      "registration_deadline": "2030-02-15T10:00:00Z",
+      "background_image_url": "https://images.pexels.com/photos/8028412/pexels-photo-8028412.jpeg?_gl=1*r02ff9*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMDIkajUzJGwwJGgw",
+      "detail_image_urls": ["https://images.pexels.com/photos/8028331/pexels-photo-8028331.jpeg?_gl=1*1s5uvff*_ga*MTgyMjI3MTUyNi4xNzU1OTE2NTQ0*_ga_8JE65Q40S6*czE3NTkzMTkxMjMkbzIkZzEkdDE3NTkzMTkyMjEkajM0JGwwJGgw"],
+      "location": "Vietnam, Hà Nội",
+      "format": "ONLINE",
+      "scale": "NATIONAL",
+      "min_age": 15,
+      "max_age": 19,
+      "owner_email": "user1@example.com",
+      "is_approved": true,
+      "is_rejected": false,
+      "rejection_reason": null,
+      "is_featured": true
+    },
+    {
       "title": "Robotics Challenge 2025",
       "overview": "Design, build, and program robots to compete in various challenges and showcase engineering skills.",
       "description": "Join us for the ultimate robotics competition where teams design, build, and program autonomous robots to tackle complex challenges. This competition brings together students, engineers, and robotics enthusiasts to demonstrate their technical skills, creativity, and problem-solving abilities. Participants will face multiple rounds including obstacle courses, precision tasks, and collaborative challenges. Teams will have access to mentorship from industry professionals and can use various platforms including Arduino, Raspberry Pi, and commercial robotics kits. The event promotes STEM education and provides networking opportunities with leading robotics companies. Winners receive scholarships, internship opportunities, and cutting-edge robotics equipment.",

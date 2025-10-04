@@ -234,6 +234,7 @@ def load_dummy_data(session: SyncSession, path: str) -> int:
             continue
         comp = Competition(
             title=str(cd["title"]),
+            overview=cd.get("overview"),
             description=cd.get("description"),
             competition_link=cd.get("competition_link"),
             registration_deadline=str(
@@ -243,6 +244,8 @@ def load_dummy_data(session: SyncSession, path: str) -> int:
             location=cd.get("location"),
             format=cd.get("format"),
             scale=cd.get("scale"),
+            min_age=cd.get("min_age"),
+            max_age=cd.get("max_age"),
             owner_id=owner.id,
             is_active=True,
             is_featured=bool(cd.get("is_featured", False)),

@@ -1,7 +1,15 @@
 from uuid import uuid4
 import json
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    String,
+    Integer,
+    CheckConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -16,14 +24,17 @@ class Competition(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
     title = Column(String(255), nullable=False, index=True)
-    description = Column(String(2000), nullable=True)
+    overview = Column(String(255), nullable=True)
+    description = Column(String(8000), nullable=True)
     competition_link = Column(String(500), nullable=True)
     registration_deadline = Column(DateTime(timezone=True), nullable=True)
     background_image_url = Column(String(500), nullable=True)
     detail_image_urls = Column(String(5000), nullable=False, default="[]")
-    location = Column(String(100), nullable=True)
+    location = Column(String(255), nullable=False)
     format = Column(String(20), nullable=True)
     scale = Column(String(20), nullable=True)
+    min_age = Column(Integer, nullable=False)
+    max_age = Column(Integer, nullable=False)
 
     # Ownership and status
     owner_id = Column(
@@ -43,6 +54,28 @@ class Competition(Base):
 
     # Relationship
     owner = relationship("User", back_populates="competitions", foreign_keys=[owner_id])
+
+    # Table constraints
+    __table_args__ = (
+        CheckConstraint(
+            "LENGTH(title) >= 1 AND LENGTH(title) <= 255", name="ck_title_length"
+        ),
+        CheckConstraint(
+            "overview IS NULL OR (LENGTH(overview) >= 0 AND LENGTH(overview) <= 255)",
+            name="ck_overview_length",
+        ),
+        CheckConstraint(
+            "description IS NULL OR (LENGTH(description) >= 0 AND LENGTH(description) <= 8000)",
+            name="ck_description_length",
+        ),
+        CheckConstraint(
+            "LENGTH(location) >= 1 AND LENGTH(location) <= 255",
+            name="ck_location_length",
+        ),
+        CheckConstraint("min_age >= 1 AND min_age <= 128", name="ck_min_age_range"),
+        CheckConstraint("max_age >= 1 AND max_age <= 128", name="ck_max_age_range"),
+        CheckConstraint("max_age >= min_age", name="ck_max_age_gte_min_age"),
+    )
 
     @property
     def detail_image_urls_list(self) -> list[str]:

@@ -248,9 +248,9 @@ export default function FeaturedCarousel() {
                     <h3 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 line-clamp-2 text-smooth">
                       {comp.title}
                     </h3>
-                    {comp.description && (
+                    {comp.overview && (
                       <p className="text-white/90 text-xs sm:text-sm md:text-base lg:text-lg line-clamp-2 sm:line-clamp-3 text-smooth">
-                        {truncateWords(comp.description, 25)}
+                        {truncateWords(comp.overview, 25)}
                       </p>
                     )}
                   </div>
