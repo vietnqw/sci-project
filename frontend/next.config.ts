@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 import { config } from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
-// Load environment variables from parent directory
-config({ path: path.resolve(__dirname, '../.env') });
+// Load environment variables from parent directory only if the file exists
+// This prevents Docker build issues when the parent .env file is not available
+const parentEnvPath = path.resolve(__dirname, '../.env');
+if (fs.existsSync(parentEnvPath)) {
+  config({ path: parentEnvPath });
+}
 
 const nextConfig: NextConfig = {
   output: 'standalone',

@@ -26,6 +26,7 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build the application
+# Note: The next.config.ts will handle environment loading gracefully
 RUN npm run build
 
 # Production image, copy all the files and run next
