@@ -11,6 +11,7 @@ import { apiRequest, ApiError } from '../api/utils';
 import type { User } from '../api/auth';
 
 type TabKey = 'profile' | 'competitions' | 'admin';
+type CompetitionTabKey = 'approved' | 'pending' | 'rejected';
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
@@ -42,6 +43,7 @@ function AccountPageContent() {
   const [competitionStatusFilter, setCompetitionStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [competitionSortBy, setCompetitionSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [activeCompetitionTab, setActiveCompetitionTab] = useState<CompetitionTabKey>('approved');
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -196,9 +198,19 @@ function AccountPageContent() {
         { id: 'competitions', label: 'Competitions' },
       ];
 
-  // Filter and sort competitions
+  // Filter and sort competitions based on active tab
   const filteredAndSortedCompetitions = userCompetitions
     .filter(comp => {
+      // Tab filter - separate approved, pending, and rejected competitions
+      let matchesTab = false;
+      if (activeCompetitionTab === 'approved') {
+        matchesTab = comp.is_approved;
+      } else if (activeCompetitionTab === 'pending') {
+        matchesTab = !comp.is_approved && !comp.is_rejected;
+      } else if (activeCompetitionTab === 'rejected') {
+        matchesTab = comp.is_rejected;
+      }
+
       // Search filter
       const matchesSearch = !competitionSearch ||
         comp.title.toLowerCase().includes(competitionSearch.toLowerCase()) ||
@@ -209,7 +221,7 @@ function AccountPageContent() {
         (competitionStatusFilter === 'active' && comp.is_active) ||
         (competitionStatusFilter === 'inactive' && !comp.is_active);
 
-      return matchesSearch && matchesStatus;
+      return matchesTab && matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       if (competitionSortBy === 'newest') {
@@ -223,6 +235,9 @@ function AccountPageContent() {
 
   const activeCompetitionsCount = userCompetitions.filter(c => c.is_active).length;
   const featuredCompetitionsCount = userCompetitions.filter(c => c.is_featured).length;
+  const approvedCompetitionsCount = userCompetitions.filter(c => c.is_approved).length;
+  const pendingCompetitionsCount = userCompetitions.filter(c => !c.is_approved && !c.is_rejected).length;
+  const totalActiveCompetitionsCount = userCompetitions.filter(c => c.is_approved || (!c.is_approved && !c.is_rejected)).length;
 
   const stats = [
     { label: 'Role', value: user.role === 'ADMIN' ? 'Administrator' : 'Creator' },
@@ -350,7 +365,7 @@ function AccountPageContent() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-blue-100 text-sm font-medium">Total Competitions</p>
-                        <p className="text-3xl font-bold mt-1">{userCompetitions.length}</p>
+                        <p className="text-3xl font-bold mt-1">{totalActiveCompetitionsCount}</p>
                       </div>
                       <div className="bg-white/20 rounded-full p-3">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -363,8 +378,8 @@ function AccountPageContent() {
                   <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-green-100 text-sm font-medium">Active</p>
-                        <p className="text-3xl font-bold mt-1">{activeCompetitionsCount}</p>
+                        <p className="text-green-100 text-sm font-medium">Approved</p>
+                        <p className="text-3xl font-bold mt-1">{approvedCompetitionsCount}</p>
                       </div>
                       <div className="bg-white/20 rounded-full p-3">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,7 +391,7 @@ function AccountPageContent() {
 
                   <div className="bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between">
-                  <div>
+                      <div>
                         <p className="text-amber-50 text-sm font-medium">Featured</p>
                         <p className="text-3xl font-bold mt-1">{featuredCompetitionsCount}</p>
                       </div>
@@ -395,7 +410,7 @@ function AccountPageContent() {
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">Manage Competitions</h2>
                       <p className="text-sm text-gray-600 mt-1">View, edit, and manage all your competitions</p>
-                  </div>
+                    </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={fetchUserCompetitions}
@@ -417,6 +432,25 @@ function AccountPageContent() {
                       New Competition
                     </button>
                   </div>
+                </div>
+
+                {/* Competition Tabs */}
+                <div className="flex items-center gap-2 border-b border-gray-200 mb-4">
+                  {(['approved', 'pending', 'rejected'] as CompetitionTabKey[]).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveCompetitionTab(tab)}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+                        activeCompetitionTab === tab
+                          ? 'border-blue-600 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {tab === 'approved' ? 'Approved Competitions' :
+                       tab === 'pending' ? 'Pending Competitions' :
+                       'Rejected Competitions'}
+                    </button>
+                  ))}
                 </div>
 
                   {/* Search and Filters */}
@@ -489,6 +523,20 @@ function AccountPageContent() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                                     <h3 className="text-base font-semibold text-gray-900 truncate">{competition.title}</h3>
+                                    {/* Status badges based on approval and active status */}
+                                    {competition.is_approved ? (
+                                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 ring-1 ring-green-300 flex-shrink-0">
+                                        ✓ Approved
+                                      </span>
+                                    ) : competition.is_rejected ? (
+                                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 ring-1 ring-red-300 flex-shrink-0">
+                                        ✗ Rejected
+                                      </span>
+                                    ) : (
+                                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 ring-1 ring-orange-300 flex-shrink-0">
+                                        ⏳ Pending
+                                      </span>
+                                    )}
                                     <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex-shrink-0 ${competition.is_active ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-gray-100 text-gray-700 ring-1 ring-gray-300'}`}>
                                       {competition.is_active ? '● Active' : '○ Inactive'}
                                     </span>
@@ -517,6 +565,18 @@ function AccountPageContent() {
                                       Registration deadline: {new Date(competition.registration_deadline).toLocaleDateString()}
                                     </p>
                                   )}
+                                  {/* Show rejection reason for rejected competitions */}
+                                  {competition.is_rejected && competition.rejection_reason && (
+                                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                                      <p className="text-xs text-red-700 font-medium flex items-center gap-1">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                        Rejection Reason:
+                                      </p>
+                                      <p className="text-xs text-red-600 mt-1">{competition.rejection_reason}</p>
+                                    </div>
+                                  )}
                                   <p className="text-xs text-gray-400 mt-1">
                                     Created {new Date(competition.created_at).toLocaleDateString()}
                                   </p>
@@ -525,20 +585,23 @@ function AccountPageContent() {
                             </div>
 
                             <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
-                              <button
-                                onClick={() => handleToggleActiveStatus(competition.id, competition.is_active)}
-                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                                  competition.is_active
-                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                }`}
-                                title={competition.is_active ? 'Deactivate' : 'Activate'}
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={competition.is_active ? "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"} />
-                                </svg>
-                                {competition.is_active ? 'Deactivate' : 'Activate'}
-                              </button>
+                              {/* Only show active/inactive toggle for approved competitions */}
+                              {competition.is_approved && (
+                                <button
+                                  onClick={() => handleToggleActiveStatus(competition.id, competition.is_active)}
+                                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+                                    competition.is_active
+                                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  }`}
+                                  title={competition.is_active ? 'Deactivate' : 'Activate'}
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={competition.is_active ? "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"} />
+                                  </svg>
+                                  {competition.is_active ? 'Deactivate' : 'Activate'}
+                                </button>
+                              )}
                               <Link
                                 href={`/competitions/${competition.id}`}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -598,10 +661,21 @@ function AccountPageContent() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No competitions found</h3>
-                      <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
-                  </div>
-                )}
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {activeCompetitionTab === 'approved' ? 'No approved competitions' :
+                         activeCompetitionTab === 'pending' ? 'No pending competitions' :
+                         'No rejected competitions'}
+                      </h3>
+                      <p className="text-gray-600">
+                        {activeCompetitionTab === 'approved'
+                          ? 'You don\'t have any approved competitions yet. Create a competition and wait for admin approval.'
+                          : activeCompetitionTab === 'pending'
+                          ? 'You don\'t have any pending competitions. All your competitions have been reviewed.'
+                          : 'You don\'t have any rejected competitions. Great job!'
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

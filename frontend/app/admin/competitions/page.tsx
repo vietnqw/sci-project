@@ -24,6 +24,7 @@ function AdminCompetitionsPageContent() {
 
   const [activeTab, setActiveTab] = useState<TabKey>(getInitialTab);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [allApprovedCompetitions, setAllApprovedCompetitions] = useState<Competition[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -109,6 +110,13 @@ function AdminCompetitionsPageContent() {
       }
       setCompetitions(resp.competitions || []);
       setTotal(resp.total || 0);
+
+      // Also fetch all approved competitions for statistics
+      const allApprovedResp = await competitionsAPI.getCompetitions({
+        is_approved: true,
+        limit: 1000 // Get all approved competitions for stats
+      });
+      setAllApprovedCompetitions(allApprovedResp.competitions || []);
     } catch (error) {
       showToast('error', error instanceof ApiError ? error.message : 'Failed to load competitions');
     } finally {
@@ -117,14 +125,17 @@ function AdminCompetitionsPageContent() {
   };
 
   const summary = useMemo(() => {
-    const active = competitions.filter((c) => c.is_active).length;
-    const featured = competitions.filter((c) => c.is_featured).length;
+    // Use all approved competitions for global statistics
+    const totalApproved = allApprovedCompetitions.length;
+    const activeApproved = allApprovedCompetitions.filter((c) => c.is_active).length;
+    const featuredActiveApproved = allApprovedCompetitions.filter((c) => c.is_active && c.is_featured).length;
+
     return [
-      { label: 'Total Competitions', value: total },
-      { label: 'Active (current page)', value: active },
-      { label: 'Featured (current page)', value: featured },
+      { label: 'Total Competitions', value: totalApproved },
+      { label: 'Active', value: activeApproved },
+      { label: 'Featured', value: featuredActiveApproved },
     ];
-  }, [competitions, total]);
+  }, [allApprovedCompetitions]);
 
   const handleFeatureToggle = async (comp: Competition) => {
     setIsActionLoading(true);
@@ -242,7 +253,7 @@ function AdminCompetitionsPageContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium">Active</p>
-                  <p className="text-3xl font-bold mt-1">{summary.find(i => i.label === 'Active (current page)')?.value}</p>
+                  <p className="text-3xl font-bold mt-1">{summary.find(i => i.label === 'Active')?.value}</p>
                 </div>
                 <div className="bg-white/20 rounded-full p-3">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +267,7 @@ function AdminCompetitionsPageContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-amber-50 text-sm font-medium">Featured</p>
-                  <p className="text-3xl font-bold mt-1">{summary.find(i => i.label === 'Featured (current page)')?.value}</p>
+                  <p className="text-3xl font-bold mt-1">{summary.find(i => i.label === 'Featured')?.value}</p>
                 </div>
                 <div className="bg-white/20 rounded-full p-3">
                   <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
