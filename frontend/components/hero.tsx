@@ -47,10 +47,8 @@ const Hero = () => (
 
           {/* Buttons - responsive layout */}
           <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center lg:justify-start gap-3 sm:gap-4">
-            <Link href="/competitions" passHref legacyBehavior>
-              <a className="bg-gray-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors text-center text-sm sm:text-base">
-                View all competitions
-              </a>
+            <Link href="/competitions" className="bg-gray-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors text-center text-sm sm:text-base">
+              View all competitions
             </Link>
             <button className="border border-gray-800 text-gray-800 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 flex items-center justify-center gap-2 transition-colors text-sm sm:text-base">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500">

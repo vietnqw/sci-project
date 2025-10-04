@@ -97,7 +97,7 @@ export default function FeaturedCarousel() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await competitionsAPI.getFeaturedCompetitions({ limit: 10, sort_by: 'created_at', order: 'desc' });
+        const response = await competitionsAPI.getFeaturedCompetitions({ limit: 10 });
         if (!isMounted) return;
         setItems(response.competitions || []);
       } catch (err) {
@@ -248,9 +248,9 @@ export default function FeaturedCarousel() {
                     <h3 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 line-clamp-2 text-smooth">
                       {comp.title}
                     </h3>
-                    {comp.introduction && (
+                    {comp.description && (
                       <p className="text-white/90 text-xs sm:text-sm md:text-base lg:text-lg line-clamp-2 sm:line-clamp-3 text-smooth">
-                        {truncateWords(comp.introduction, 25)}
+                        {truncateWords(comp.description, 25)}
                       </p>
                     )}
                   </div>
