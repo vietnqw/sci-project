@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "sci_db"
+    POSTGRES_DB_TEST: str = "sci_db_test"
 
     # Datbase Connection Pool Configuration
     POSTGRES_POOL_SIZE: int = Field(
@@ -89,6 +90,19 @@ class Settings(BaseSettings):
     def POSTGRES_URL_SYNC(self) -> str:
         """Synchronous PostgreSQL URL for Alembic"""
         return self.POSTGRES_URL.replace("asyncpg", "psycopg2")
+
+    @property
+    def POSTGRES_URL_TEST(self) -> str:
+        """Test PostgreSQL URL for testing"""
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_TEST}"
+        )
+
+    @property
+    def POSTGRES_URL_TEST_SYNC(self) -> str:
+        """Synchronous test PostgreSQL URL for testing"""
+        return self.POSTGRES_URL_TEST.replace("asyncpg", "psycopg2")
 
     @property
     def S3_BASE_URL(self) -> str | None:

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.pool import NullPool
 
 # Ensure test DB env before importing app modules
-os.environ.setdefault("POSTGRES_DB", os.getenv("POSTGRES_DB", "sci_db"))
+os.environ.setdefault("POSTGRES_DB", os.getenv("POSTGRES_DB_TEST", "sci_db_test"))
 
 from app.config.settings import settings  # noqa: E402
 from app.config.database import get_db  # noqa: E402
@@ -22,7 +22,7 @@ from app.main import app  # noqa: E402
 
 # Create a separate test engine with NullPool to avoid connection issues
 test_engine = create_async_engine(
-    url=settings.POSTGRES_URL,
+    url=settings.POSTGRES_URL_TEST,
     poolclass=NullPool,
     echo=False,
 )
