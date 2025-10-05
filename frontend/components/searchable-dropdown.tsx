@@ -56,10 +56,10 @@ export default function SearchableDropdown({
 
   // Update search term when value changes externally
   useEffect(() => {
-    if (value && !isOpen) {
+    if (value) {
       setSearchTerm(value);
     }
-  }, [value, isOpen]);
+  }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearchTerm = e.target.value;

@@ -290,8 +290,8 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
             <LocationSelector
               country={formData.location_country || ''}
               city={formData.location_city || ''}
-              onCountryChange={(country) => setFormData({ ...formData, location_country: country })}
-              onCityChange={(city) => setFormData({ ...formData, location_city: city })}
+              onCountryChange={(country) => setFormData(prev => ({ ...prev, location_country: country }))}
+              onCityChange={(city) => setFormData(prev => ({ ...prev, location_city: city }))}
             />
             {errors.location_country && <p className="mt-1 text-sm text-red-500">{errors.location_country}</p>}
             {errors.location_city && <p className="mt-1 text-sm text-red-500">{errors.location_city}</p>}

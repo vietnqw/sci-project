@@ -50,23 +50,16 @@ export default function LocationSelector({
     if (country && countries.length > 0) {
       const cities = getCitiesForCountry(countries, country);
       setAvailableCities(cities);
-
-      // Clear city selection if it's not available in the new country
-      if (city && !cities.includes(city)) {
-        onCityChange('');
-      }
+      // Don't clear city on initial load - let it stay as is
     } else {
       setAvailableCities([]);
-      if (city) {
-        onCityChange('');
-      }
     }
-  }, [country, countries, city, onCityChange]);
+  }, [country, countries]);
 
   const handleCountryChange = (newCountry: string) => {
     onCountryChange(newCountry);
-    // Clear city when country changes
-    if (city) {
+    // Only clear city if the country actually changed (not on initial load)
+    if (city && newCountry !== country) {
       onCityChange('');
     }
   };
