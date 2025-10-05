@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { fuzzyFilter, fuzzySort } from '../lib/fuzzy-search';
+import { fuzzyFilter, fuzzySort } from '@/lib/fuzzy-search';
 
 interface SearchableDropdownProps {
   options: string[];

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import SearchableDropdown from './searchable-dropdown';
-import { fetchCountriesData, getCitiesForCountry, searchCountries, searchCities, Country } from '../lib/countries-data';
+import { fetchCountriesData, getCitiesForCountry, searchCountries, searchCities, Country } from '@/lib/countries-data';
 
 interface LocationSelectorProps {
   country: string;

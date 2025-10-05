@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { competitionsAPI, formatLocation, type Competition } from "../api/competitions";
-import { fuzzyMatch } from "../../lib/fuzzy-search";
+import { fuzzyMatch } from "@/lib/fuzzy-search";
 
 const DEFAULT_LIMIT = 12;
 
