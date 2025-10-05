@@ -338,7 +338,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
                 id="min_age"
                 type="number"
                 min="0"
-                max="100"
+                max="255"
                 value={formData.min_age || ''}
                 onChange={(e) => setFormData({ ...formData, min_age: e.target.value ? parseInt(e.target.value) : undefined })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -354,7 +354,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
                 id="max_age"
                 type="number"
                 min="0"
-                max="100"
+                max="255"
                 value={formData.max_age || ''}
                 onChange={(e) => setFormData({ ...formData, max_age: e.target.value ? parseInt(e.target.value) : undefined })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"

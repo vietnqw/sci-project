@@ -278,7 +278,7 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
         "title": "Valid Title",
         "location_country": "Vietnam",
         "location_city": "Test City",
-        "min_age": 0,  # Too low should fail
+        "min_age": -1,  # Too low should fail
         "max_age": 20,
     }
     resp = await client.post("/competitions", json=payload, headers=auth)
@@ -289,7 +289,7 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
         "location_country": "Vietnam",
         "location_city": "Test City",
         "min_age": 10,
-        "max_age": 129,  # Too high should fail
+        "max_age": 256,  # Too high should fail
     }
     resp = await client.post("/competitions", json=payload, headers=auth)
     assert resp.status_code == 422

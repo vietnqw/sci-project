@@ -66,8 +66,8 @@ class CompetitionBase(CompetitionValidationMixin, BaseModel):
     location_city: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int | None = Field(default=None, ge=1, le=128)
-    max_age: int | None = Field(default=None, ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=0, le=255)
+    max_age: int | None = Field(default=None, ge=0, le=255)
 
 
 class CompetitionCreate(CompetitionBase):
@@ -88,8 +88,8 @@ class CompetitionUpdate(CompetitionValidationMixin, BaseModel):
     location_city: str | None = Field(default=None, min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int | None = Field(default=None, ge=1, le=128)
-    max_age: int | None = Field(default=None, ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=0, le=255)
+    max_age: int | None = Field(default=None, ge=0, le=255)
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -111,8 +111,8 @@ class CompetitionResponse(BaseModel):
     location_city: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int | None = Field(default=None, ge=1, le=128)
-    max_age: int | None = Field(default=None, ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=0, le=255)
+    max_age: int | None = Field(default=None, ge=0, le=255)
     owner_id: UUID | None = None
     owner: UserSummary | None = None
     is_active: bool
@@ -247,8 +247,8 @@ class CompetitionCreateWithFiles(CompetitionValidationMixin, BaseModel):
     location_city: str = Field(..., min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int | None = Field(default=None, ge=1, le=128)
-    max_age: int | None = Field(default=None, ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=0, le=255)
+    max_age: int | None = Field(default=None, ge=0, le=255)
 
     # File uploads
     background_image: UploadFile | None = None
@@ -269,8 +269,8 @@ class CompetitionUpdateWithFiles(CompetitionValidationMixin, BaseModel):
     location_city: str | None = Field(default=None, min_length=1, max_length=255)
     format: CompetitionFormat | None = Field(default=None)
     scale: CompetitionScale | None = Field(default=None)
-    min_age: int | None = Field(default=None, ge=1, le=128)
-    max_age: int | None = Field(default=None, ge=1, le=128)
+    min_age: int | None = Field(default=None, ge=0, le=255)
+    max_age: int | None = Field(default=None, ge=0, le=255)
 
     # File uploads
     background_image: UploadFile | None = None

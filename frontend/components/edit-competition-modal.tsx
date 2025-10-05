@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { competitionsAPI, type CompetitionUpdate, type Competition, formatLocation } from '../app/api/competitions';
 import LocationSelector from './location-selector';
 
+interface EditFormData extends Omit<CompetitionUpdate, 'min_age' | 'max_age'> {
+  min_age: number | null;
+  max_age: number | null;
+}
+
 interface EditCompetitionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -12,7 +17,7 @@ interface EditCompetitionModalProps {
 }
 
 export default function EditCompetitionModal({ isOpen, onClose, onSuccess, competition }: EditCompetitionModalProps) {
-  const [formData, setFormData] = useState<CompetitionUpdate>({
+  const [formData, setFormData] = useState<EditFormData>({
     title: '',
     description: '',
     competition_link: '',
@@ -22,8 +27,8 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
     location_city: '',
     format: undefined,
     scale: undefined,
-    min_age: undefined,
-    max_age: undefined,
+    min_age: null,
+    max_age: null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,9 +55,16 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
         location_city: competition.location_city || '',
         format: competition.format || undefined,
         scale: competition.scale || undefined,
-        min_age: competition.min_age || undefined,
-        max_age: competition.max_age || undefined,
+        min_age: competition.min_age ?? null,
+        max_age: competition.max_age ?? null,
       });
+      // Reset file states when opening modal
+      setBackgroundImageFile(null);
+      setDetailImageFiles([]);
+      setBackgroundImagePreview(null);
+      setDetailImagePreviews([]);
+      setRemoveBackgroundImage(false);
+      setRemoveDetailImages([]);
       setErrors({});
     }
   }, [competition, isOpen]);
@@ -156,20 +168,21 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
 
     setIsSubmitting(true);
     try {
-      // Prepare data for submission
+      // Prepare data for submission - only include fields that have values
       const submitData: CompetitionUpdate = {
         title: formData.title,
-        description: formData.description || undefined,
-        competition_link: formData.competition_link || undefined,
-        registration_deadline: formData.registration_deadline ?
-          new Date(formData.registration_deadline).toISOString() : undefined,
-        background_image_url: formData.background_image_url || undefined,
-        location_country: formData.location_country || undefined,
-        location_city: formData.location_city || undefined,
-        format: formData.format || undefined,
-        scale: formData.scale || undefined,
-        min_age: formData.min_age || undefined,
-        max_age: formData.max_age || undefined,
+        ...(formData.description && { description: formData.description }),
+        ...(formData.competition_link && { competition_link: formData.competition_link }),
+        ...(formData.registration_deadline && {
+          registration_deadline: new Date(formData.registration_deadline).toISOString()
+        }),
+        ...(formData.background_image_url && { background_image_url: formData.background_image_url }),
+        ...(formData.location_country && { location_country: formData.location_country }),
+        ...(formData.location_city && { location_city: formData.location_city }),
+        ...(formData.format && { format: formData.format }),
+        ...(formData.scale && { scale: formData.scale }),
+        ...(formData.min_age !== null && { min_age: formData.min_age }),
+        ...(formData.max_age !== null && { max_age: formData.max_age }),
       };
 
       // Use file upload API if files are provided or being removed, otherwise use regular API
@@ -197,19 +210,7 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
   };
 
   const handleClose = () => {
-    setFormData({
-      title: '',
-      description: '',
-      competition_link: '',
-      registration_deadline: '',
-      background_image_url: '',
-      location_country: '',
-      location_city: '',
-      format: undefined,
-      scale: undefined,
-      min_age: undefined,
-      max_age: undefined,
-    });
+    // Reset file states
     setBackgroundImageFile(null);
     setDetailImageFiles([]);
     setBackgroundImagePreview(null);
@@ -348,9 +349,9 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
                 id="min_age"
                 type="number"
                 min="0"
-                max="100"
+                max="255"
                 value={formData.min_age || ''}
-                onChange={(e) => setFormData({ ...formData, min_age: e.target.value ? parseInt(e.target.value) : undefined })}
+                onChange={(e) => setFormData({ ...formData, min_age: e.target.value ? parseInt(e.target.value) : null })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                 placeholder="e.g., 16"
               />
@@ -364,9 +365,9 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
                 id="max_age"
                 type="number"
                 min="0"
-                max="100"
+                max="255"
                 value={formData.max_age || ''}
-                onChange={(e) => setFormData({ ...formData, max_age: e.target.value ? parseInt(e.target.value) : undefined })}
+                onChange={(e) => setFormData({ ...formData, max_age: e.target.value ? parseInt(e.target.value) : null })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                 placeholder="e.g., 25"
               />

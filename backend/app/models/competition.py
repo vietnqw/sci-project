@@ -78,11 +78,11 @@ class Competition(Base):
             name="ck_location_city_length",
         ),
         CheckConstraint(
-            "min_age IS NULL OR (min_age >= 1 AND min_age <= 128)",
+            "min_age IS NULL OR (min_age >= 0 AND min_age <= 255)",
             name="ck_min_age_range",
         ),
         CheckConstraint(
-            "max_age IS NULL OR (max_age >= 1 AND max_age <= 128)",
+            "max_age IS NULL OR (max_age >= 0 AND max_age <= 255)",
             name="ck_max_age_range",
         ),
         CheckConstraint(
