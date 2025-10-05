@@ -1,9 +1,8 @@
-"""S3 service for handling image uploads and deletions."""
+"""S3 service for handling presigned URLs and direct uploads."""
 
 import os
 import uuid
-from typing import BinaryIO, List, Optional
-from uuid import UUID
+from typing import Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -13,23 +12,21 @@ from app.config.settings import settings
 
 
 class S3Service:
-    """Service for handling S3 operations."""
+    """Service for handling S3 operations with presigned URLs."""
 
     def __init__(self):
         """Initialize S3 client."""
         self.s3_client = None
         self.bucket_name = settings.S3_BUCKET_NAME
-        self.base_url = settings.S3_BASE_URL
+        self.cloudfront_url = settings.CLOUDFRONT_BASE_URL
 
         if not self.bucket_name:
             logger.warning("S3_BUCKET_NAME not configured")
             return
 
         # Log CloudFront configuration
-        if settings.CLOUDFRONT_BASE_URL:
-            logger.info(
-                f"Using CloudFront for S3 content: {settings.CLOUDFRONT_BASE_URL}"
-            )
+        if self.cloudfront_url:
+            logger.info(f"Using CloudFront for S3 content: {self.cloudfront_url}")
         else:
             logger.info("Using direct S3 URLs (CloudFront not configured)")
 
@@ -46,84 +43,185 @@ class S3Service:
         except Exception as e:
             logger.error(f"Failed to initialize S3 client: {e}")
 
-    def _get_s3_key(
-        self, competition_id: UUID, filename: str, is_detail_image: bool = False
+    def _generate_s3_key(
+        self, entity: str, entity_id: str, purpose: str, filename: str
     ) -> str:
-        """Generate S3 key for the file."""
-        if is_detail_image:
-            return f"competitions/{competition_id}/images/detail_images/{filename}"
-        return f"competitions/{competition_id}/images/{filename}"
+        """
+        Generate S3 key following the naming convention.
+
+        Args:
+            entity: 'user' or 'competition'
+            entity_id: ID of the entity
+            purpose: 'avatar', 'background', or 'detail'
+            filename: Original filename with extension
+
+        Returns:
+            S3 key string
+        """
+        # Extract file extension
+        file_extension = os.path.splitext(filename)[1].lower()
+        if not file_extension:
+            file_extension = ".jpg"  # Default to jpg
+
+        # Generate unique filename with UUID
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+
+        if entity == "user":
+            if purpose == "avatar":
+                return f"users/{entity_id}/avatar/{unique_filename}"
+            else:
+                raise ValueError(f"Invalid purpose '{purpose}' for user entity")
+        elif entity == "competition":
+            if purpose == "background":
+                return f"competitions/{entity_id}/background_image/{unique_filename}"
+            elif purpose == "detail":
+                return f"competitions/{entity_id}/detail_images/{unique_filename}"
+            else:
+                raise ValueError(f"Invalid purpose '{purpose}' for competition entity")
+        else:
+            raise ValueError(
+                f"Invalid entity '{entity}'. Must be 'user' or 'competition'"
+            )
 
     def _get_public_url(self, s3_key: str) -> str:
         """Generate public URL for the S3 object."""
-        if self.base_url:
-            return f"{self.base_url.rstrip('/')}/{s3_key}"
+        if self.cloudfront_url:
+            return f"{self.cloudfront_url.rstrip('/')}/{s3_key}"
         return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
 
-    async def upload_image(
+    def generate_presigned_url(
         self,
-        competition_id: UUID,
-        file: BinaryIO,
+        entity: str,
+        entity_id: str,
+        purpose: str,
         filename: str,
-        is_detail_image: bool = False,
-    ) -> Optional[str]:
+        content_type: str,
+        expiration: int = 300,  # 5 minutes default
+    ) -> Optional[Dict[str, str]]:
         """
-        Upload an image to S3.
+        Generate presigned URL for direct S3 upload.
 
         Args:
-            competition_id: Competition UUID
-            file: File object to upload
+            entity: 'user' or 'competition'
+            entity_id: ID of the entity
+            purpose: 'avatar', 'background', or 'detail'
+            filename: Original filename
             content_type: MIME type of the file
-            is_detail_image: Whether this is a detail image or background image
+            expiration: URL expiration time in seconds
 
         Returns:
-            Public URL of the uploaded image or None if upload failed
+            Dictionary with presigned URL, S3 key, and public URL
         """
         if not self.s3_client or not self.bucket_name:
             logger.error("S3 client not initialized or bucket name not configured")
             return None
 
-        # Generate unique filename to avoid conflicts
-        file_extension = os.path.splitext(filename)[1]
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
-        s3_key = self._get_s3_key(competition_id, unique_filename, is_detail_image)
-
         try:
-            # Reset file pointer to beginning
-            file.seek(0)
+            # Generate S3 key
+            s3_key = self._generate_s3_key(entity, entity_id, purpose, filename)
 
-            # Upload file to S3
-            # When using CloudFront, files should be private (no ACL)
-            # When using direct S3 URLs, files should be public
-            extra_args = {
-                "ContentType": "image/jpeg",  # Default to JPEG, could be made configurable
-            }
-
-            # Only set ACL to public-read if not using CloudFront
-            if not settings.CLOUDFRONT_BASE_URL:
-                extra_args["ACL"] = "public-read"
-
-            self.s3_client.upload_fileobj(
-                file, self.bucket_name, s3_key, ExtraArgs=extra_args
+            # Generate presigned URL for PUT operation
+            presigned_url = self.s3_client.generate_presigned_url(
+                "put_object",
+                Params={
+                    "Bucket": self.bucket_name,
+                    "Key": s3_key,
+                    "ContentType": content_type,
+                },
+                ExpiresIn=expiration,
             )
 
+            # Generate public URL
             public_url = self._get_public_url(s3_key)
-            logger.info(f"Successfully uploaded image to S3: {public_url}")
-            return public_url
+
+            logger.info(f"Generated presigned URL for {s3_key}")
+
+            return {
+                "presignedUrl": presigned_url,
+                "s3Key": s3_key,
+                "publicUrl": public_url,
+            }
 
         except ClientError as e:
-            logger.error(f"Failed to upload image to S3: {e}")
+            logger.error(f"Failed to generate presigned URL: {e}")
             return None
         except Exception as e:
-            logger.error(f"Unexpected error uploading image: {e}")
+            logger.error(f"Unexpected error generating presigned URL: {e}")
             return None
 
-    async def delete_image(self, image_url: str) -> bool:
+    def generate_batch_presigned_urls(
+        self,
+        entity: str,
+        entity_id: str,
+        purpose: str,
+        filenames: List[str],
+        content_types: List[str],
+        expiration: int = 300,
+    ) -> Optional[List[Dict[str, str]]]:
         """
-        Delete an image from S3.
+        Generate multiple presigned URLs for batch uploads.
 
         Args:
-            image_url: Public URL of the image to delete
+            entity: 'user' or 'competition'
+            entity_id: ID of the entity
+            purpose: 'avatar', 'background', or 'detail'
+            filenames: List of original filenames
+            content_types: List of MIME types
+            expiration: URL expiration time in seconds
+
+        Returns:
+            List of dictionaries with presigned URLs, S3 keys, and public URLs
+        """
+        if len(filenames) != len(content_types):
+            logger.error("Number of filenames must match number of content types")
+            return None
+
+        presigned_urls = []
+
+        for filename, content_type in zip(filenames, content_types):
+            result = self.generate_presigned_url(
+                entity, entity_id, purpose, filename, content_type, expiration
+            )
+            if result:
+                presigned_urls.append(result)
+            else:
+                logger.error(f"Failed to generate presigned URL for {filename}")
+                return None
+
+        return presigned_urls
+
+    async def verify_upload(self, s3_key: str) -> bool:
+        """
+        Verify that an object exists in S3.
+
+        Args:
+            s3_key: S3 key to verify
+
+        Returns:
+            True if object exists, False otherwise
+        """
+        if not self.s3_client or not self.bucket_name:
+            logger.error("S3 client not initialized or bucket name not configured")
+            return False
+
+        try:
+            self.s3_client.head_object(Bucket=self.bucket_name, Key=s3_key)
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                return False
+            logger.error(f"Error verifying upload: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error verifying upload: {e}")
+            return False
+
+    async def delete_object(self, s3_key: str) -> bool:
+        """
+        Delete an object from S3.
+
+        Args:
+            s3_key: S3 key to delete
 
         Returns:
             True if deletion was successful, False otherwise
@@ -133,76 +231,59 @@ class S3Service:
             return False
 
         try:
-            # Extract S3 key from the URL
-            if self.base_url and image_url.startswith(self.base_url):
-                s3_key = image_url.replace(f"{self.base_url.rstrip('/')}/", "")
-            else:
-                # Try to extract from standard S3 URL format
-                s3_key = image_url.split(
-                    f"{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/"
-                )[-1]
-
-            # Delete the object from S3
             self.s3_client.delete_object(Bucket=self.bucket_name, Key=s3_key)
-            logger.info(f"Successfully deleted image from S3: {s3_key}")
+            logger.info(f"Successfully deleted object: {s3_key}")
             return True
-
         except ClientError as e:
-            logger.error(f"Failed to delete image from S3: {e}")
+            logger.error(f"Failed to delete object {s3_key}: {e}")
             return False
         except Exception as e:
-            logger.error(f"Unexpected error deleting image: {e}")
+            logger.error(f"Unexpected error deleting object {s3_key}: {e}")
             return False
 
-    async def delete_images(self, image_urls: List[str]) -> bool:
+    async def delete_objects(self, s3_keys: List[str]) -> bool:
         """
-        Delete multiple images from S3.
+        Delete multiple objects from S3.
 
         Args:
-            image_urls: List of public URLs of images to delete
+            s3_keys: List of S3 keys to delete
 
         Returns:
             True if all deletions were successful, False otherwise
         """
-        if not image_urls:
+        if not s3_keys:
             return True
 
-        success = True
-        for url in image_urls:
-            if not await self.delete_image(url):
-                success = False
+        if not self.s3_client or not self.bucket_name:
+            logger.error("S3 client not initialized or bucket name not configured")
+            return False
 
-        return success
+        try:
+            # Delete objects in batch (up to 1000 objects per request)
+            objects_to_delete = [{"Key": key} for key in s3_keys]
 
-    async def upload_multiple_images(
-        self,
-        competition_id: UUID,
-        files: List[BinaryIO],
-        filenames: List[str],
-        is_detail_images: bool = False,
-    ) -> List[str]:
-        """
-        Upload multiple images to S3.
-
-        Args:
-            competition_id: Competition UUID
-            files: List of file objects to upload
-            filenames: List of original filenames
-            is_detail_images: Whether these are detail images or background images
-
-        Returns:
-            List of public URLs of successfully uploaded images
-        """
-        uploaded_urls = []
-
-        for file, filename in zip(files, filenames):
-            url = await self.upload_image(
-                competition_id, file, filename, is_detail_images
+            response = self.s3_client.delete_objects(
+                Bucket=self.bucket_name, Delete={"Objects": objects_to_delete}
             )
-            if url:
-                uploaded_urls.append(url)
 
-        return uploaded_urls
+            # Check for any errors
+            if "Errors" in response and response["Errors"]:
+                logger.error(f"Some objects failed to delete: {response['Errors']}")
+                return False
+
+            logger.info(f"Successfully deleted {len(s3_keys)} objects")
+            return True
+
+        except ClientError as e:
+            logger.error(f"Failed to delete objects: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error deleting objects: {e}")
+            return False
+
+    def get_public_url(self, s3_key: str) -> str:
+        """Get public URL for an S3 key."""
+        return self._get_public_url(s3_key)
 
 
 # Global S3 service instance

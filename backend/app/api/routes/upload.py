@@ -1,203 +1,436 @@
-"""Upload routes for handling file uploads."""
+"""Upload routes for handling presigned URLs and upload confirmations."""
 
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from uuid import UUID
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
+from app.models.competition import Competition
 from app.services.s3_service import s3_service
-from uuid import uuid4
+
 
 router = APIRouter()
 
 
-@router.post("/images")
-async def upload_image(
-    file: UploadFile = File(...),
-    category: str = Form("user-image"),
-    competition_id: str = Form(None),
+class PresignedUrlRequest(BaseModel):
+    """Request model for generating presigned URLs."""
+
+    entity: str = Field(..., description="Entity type: 'user' or 'competition'")
+    entity_id: str = Field(..., description="ID of the entity")
+    purpose: str = Field(
+        ..., description="Purpose: 'avatar', 'background', or 'detail'"
+    )
+    filename: str = Field(..., description="Original filename")
+    content_type: str = Field(..., description="MIME type of the file")
+    expiration: Optional[int] = Field(300, description="URL expiration time in seconds")
+
+
+class BatchPresignedUrlRequest(BaseModel):
+    """Request model for generating batch presigned URLs."""
+
+    entity: str = Field(..., description="Entity type: 'user' or 'competition'")
+    entity_id: str = Field(..., description="ID of the entity")
+    purpose: str = Field(
+        ..., description="Purpose: 'avatar', 'background', or 'detail'"
+    )
+    filenames: List[str] = Field(..., description="List of original filenames")
+    content_types: List[str] = Field(..., description="List of MIME types")
+    expiration: Optional[int] = Field(300, description="URL expiration time in seconds")
+
+
+class UploadConfirmRequest(BaseModel):
+    """Request model for confirming uploads."""
+
+    entity: str = Field(..., description="Entity type: 'user' or 'competition'")
+    entity_id: str = Field(..., description="ID of the entity")
+    purpose: str = Field(
+        ..., description="Purpose: 'avatar', 'background', or 'detail'"
+    )
+    s3_key: str = Field(..., description="S3 key of the uploaded file")
+    mime_type: str = Field(..., description="MIME type of the uploaded file")
+    size: int = Field(..., description="Size of the uploaded file in bytes")
+
+
+@router.post("/presigned-url")
+async def generate_presigned_url(
+    request: PresignedUrlRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """
-    Upload an image file to S3.
+    Generate a presigned URL for direct S3 upload.
 
-    Args:
-        file: The image file to upload
-        category: Category of the upload (user-image, competition-background, competition-asset)
-        competition_id: Competition ID for competition-related uploads
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        JSON response with upload details
+    This endpoint validates permissions and generates a presigned URL
+    that allows the frontend to upload directly to S3.
     """
-    # Validate file type
+    # Validate entity and purpose
+    if request.entity not in ["user", "competition"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Entity must be 'user' or 'competition'",
+        )
+
+    if request.purpose not in ["avatar", "background", "detail"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Purpose must be 'avatar', 'background', or 'detail'",
+        )
+
+    # Validate content type
     allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-    if file.content_type not in allowed_types:
+    if request.content_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file type. Only JPEG, PNG, and WebP images are allowed.",
+            detail="Invalid content type. Only JPEG, PNG, and WebP images are allowed.",
         )
 
-    # Validate file size (10MB max)
-    max_size = 10 * 1024 * 1024  # 10MB
-    if file.size and file.size > max_size:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File size too large. Maximum size is 10MB.",
-        )
-
-    # Validate category
-    allowed_categories = ["user-image", "competition-background", "competition-asset"]
-    if category not in allowed_categories:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid category. Must be one of: user-image, competition-background, competition-asset",
-        )
-
-    # Validate competition_id for competition-related uploads
-    if (
-        category in ["competition-background", "competition-asset"]
-        and not competition_id
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Competition ID is required for competition-related uploads.",
-        )
-
-    try:
-        # Generate unique filename
-        file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-        unique_filename = f"{uuid4()}.{file_extension}"
-
-        # Upload to S3
-        if category == "competition-background":
-            # Upload as background image for competition
-            s3_key = f"competitions/{competition_id}/images/{unique_filename}"
-            is_detail_image = False
-        elif category == "competition-asset":
-            # Upload as detail image for competition
-            s3_key = (
-                f"competitions/{competition_id}/images/detail_images/{unique_filename}"
-            )
-            is_detail_image = True
-        else:
-            # Upload as user image
-            s3_key = f"users/{current_user.id}/images/{unique_filename}"
-            is_detail_image = False
-
-        # Use S3 service to upload
-        from uuid import UUID
-
-        if category in ["competition-background", "competition-asset"]:
-            # For competition uploads, use the provided competition ID
-            competition_uuid = UUID(competition_id)
-            public_url = await s3_service.upload_image(
-                competition_uuid, file.file, unique_filename, is_detail_image
-            )
-        else:
-            # For user uploads, we need to create a different S3 structure
-            # Since we don't have a competition ID for user uploads, we'll handle this differently
-            # For now, let's use a dummy competition ID but with a different path structure
-            dummy_competition_id = UUID("00000000-0000-0000-0000-000000000000")
-            public_url = await s3_service.upload_image(
-                dummy_competition_id, file.file, unique_filename, is_detail_image
-            )
-
-        if not public_url:
+    # Validate permissions
+    if request.entity == "user":
+        if request.entity_id != str(current_user.id):
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to upload image to S3.",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload images for your own account",
+            )
+        if request.purpose != "avatar":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Users can only upload avatar images",
             )
 
-        logger.info(f"Successfully uploaded image: {public_url}")
+    elif request.entity == "competition":
+        # Verify the competition exists and user has permission
+        try:
+            competition_uuid = UUID(request.entity_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid competition ID format",
+            )
 
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={
-                "url": public_url,
-                "key": s3_key,
-                "filename": unique_filename,
-                "content_type": file.content_type,
-                "size": file.size or 0,
-            },
-        )
+        # Check if competition exists and user owns it
+        competition = await db.get(Competition, competition_uuid)
+        if not competition:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Competition not found"
+            )
 
-    except Exception as e:
-        logger.error(f"Failed to upload image: {e}")
+        if competition.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload images for competitions you own",
+            )
+
+    # Generate presigned URL
+    result = s3_service.generate_presigned_url(
+        entity=request.entity,
+        entity_id=request.entity_id,
+        purpose=request.purpose,
+        filename=request.filename,
+        content_type=request.content_type,
+        expiration=request.expiration,
+    )
+
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Upload failed: {str(e)}",
+            detail="Failed to generate presigned URL",
         )
 
+    logger.info(
+        f"Generated presigned URL for {request.entity}/{request.entity_id}/{request.purpose}"
+    )
 
-@router.delete("/images/{key:path}")
-async def delete_image(
-    key: str,
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=result,
+    )
+
+
+@router.post("/presigned-urls/batch")
+async def generate_batch_presigned_urls(
+    request: BatchPresignedUrlRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """
-    Delete an image from S3.
+    Generate multiple presigned URLs for batch uploads.
 
-    Args:
-        key: S3 key of the image to delete
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        JSON response with deletion status
+    This endpoint is useful for uploading multiple detail images
+    for competitions or multiple files at once.
     """
-    try:
-        # Construct the full URL from the key
-        # This is a simplified approach - in production you'd want more validation
-        base_url = (
-            s3_service.base_url
-            or f"https://{s3_service.bucket_name}.s3.{s3_service.bucket_name}.amazonaws.com"
+    # Validate entity and purpose
+    if request.entity not in ["user", "competition"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Entity must be 'user' or 'competition'",
         )
-        full_url = f"{base_url}/{key}"
 
-        success = await s3_service.delete_image(full_url)
+    if request.purpose not in ["avatar", "background", "detail"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Purpose must be 'avatar', 'background', or 'detail'",
+        )
 
-        if success:
+    # Validate content types
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    for content_type in request.content_types:
+        if content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid content type. Only JPEG, PNG, and WebP images are allowed.",
+            )
+
+    # Validate permissions (same logic as single presigned URL)
+    if request.entity == "user":
+        if request.entity_id != str(current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload images for your own account",
+            )
+        if request.purpose != "avatar":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Users can only upload avatar images",
+            )
+
+    elif request.entity == "competition":
+        try:
+            competition_uuid = UUID(request.entity_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid competition ID format",
+            )
+
+        competition = await db.get(Competition, competition_uuid)
+        if not competition:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Competition not found"
+            )
+
+        if competition.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload images for competitions you own",
+            )
+
+    # Generate batch presigned URLs
+    result = s3_service.generate_batch_presigned_urls(
+        entity=request.entity,
+        entity_id=request.entity_id,
+        purpose=request.purpose,
+        filenames=request.filenames,
+        content_types=request.content_types,
+        expiration=request.expiration,
+    )
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate presigned URLs",
+        )
+
+    logger.info(
+        f"Generated {len(result)} presigned URLs for {request.entity}/{request.entity_id}/{request.purpose}"
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"presignedUrls": result},
+    )
+
+
+@router.post("/confirm")
+async def confirm_upload(
+    request: UploadConfirmRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """
+    Confirm that an upload was successful and update the database.
+
+    This endpoint is called after the frontend successfully uploads
+    a file to S3 using the presigned URL.
+    """
+    # Validate entity and purpose
+    if request.entity not in ["user", "competition"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Entity must be 'user' or 'competition'",
+        )
+
+    if request.purpose not in ["avatar", "background", "detail"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Purpose must be 'avatar', 'background', or 'detail'",
+        )
+
+    # Validate permissions
+    if request.entity == "user":
+        if request.entity_id != str(current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only confirm uploads for your own account",
+            )
+
+    elif request.entity == "competition":
+        try:
+            competition_uuid = UUID(request.entity_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid competition ID format",
+            )
+
+        competition = await db.get(Competition, competition_uuid)
+        if not competition:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Competition not found"
+            )
+
+        if competition.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only confirm uploads for competitions you own",
+            )
+
+    # Verify the upload exists in S3
+    upload_exists = await s3_service.verify_upload(request.s3_key)
+    if not upload_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Upload verification failed. File not found in S3.",
+        )
+
+    try:
+        # Update database based on entity and purpose
+        if request.entity == "user" and request.purpose == "avatar":
+            # Update user avatar
+            current_user.avatar_url = s3_service.get_public_url(request.s3_key)
+            await db.commit()
+            await db.refresh(current_user)
+
+            logger.info(f"Updated avatar for user {current_user.id}")
+
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
-                content={"message": "Image deleted successfully"},
+                content={
+                    "message": "Avatar updated successfully",
+                    "url": current_user.avatar_url,
+                    "s3Key": request.s3_key,
+                },
+            )
+
+        elif request.entity == "competition":
+            competition = await db.get(Competition, competition_uuid)
+
+            if request.purpose == "background":
+                # Update competition background image
+                competition.background_image_url = s3_service.get_public_url(
+                    request.s3_key
+                )
+                await db.commit()
+                await db.refresh(competition)
+
+                logger.info(
+                    f"Updated background image for competition {competition.id}"
+                )
+
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK,
+                    content={
+                        "message": "Background image updated successfully",
+                        "url": competition.background_image_url,
+                        "s3Key": request.s3_key,
+                    },
+                )
+
+            elif request.purpose == "detail":
+                # Add detail image to competition
+                # Note: This would require a separate table for detail images
+                # For now, we'll just return success
+                logger.info(f"Added detail image for competition {competition.id}")
+
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK,
+                    content={
+                        "message": "Detail image added successfully",
+                        "url": s3_service.get_public_url(request.s3_key),
+                        "s3Key": request.s3_key,
+                    },
+                )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid entity/purpose combination",
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to confirm upload: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to confirm upload",
+        )
+
+
+@router.delete("/{s3_key:path}")
+async def delete_upload(
+    s3_key: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """
+    Delete an uploaded file from S3.
+
+    This endpoint allows users to delete files they have uploaded.
+    """
+    try:
+        # Verify the file exists and user has permission
+        # This would require additional logic to check ownership
+        # For now, we'll implement basic deletion
+
+        success = await s3_service.delete_object(s3_key)
+
+        if success:
+            logger.info(f"Successfully deleted file: {s3_key}")
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={"message": "File deleted successfully"},
             )
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete image",
+                detail="Failed to delete file",
             )
 
     except Exception as e:
-        logger.error(f"Failed to delete image: {e}")
+        logger.error(f"Failed to delete file: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Delete failed: {str(e)}",
+            detail="Failed to delete file",
         )
 
 
-@router.get("/images/status")
+@router.get("/status")
 async def get_upload_status() -> JSONResponse:
     """
     Get upload service status.
 
-    Returns:
-        JSON response with service status
+    Returns the current status of the S3 service.
     """
     try:
-        # Check if S3 service is available
         if s3_service.s3_client and s3_service.bucket_name:
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content={
                     "status": "ok",
                     "bucket": s3_service.bucket_name,
-                    "region": s3_service.base_url,
+                    "cloudfront": s3_service.cloudfront_url,
                 },
             )
         else:

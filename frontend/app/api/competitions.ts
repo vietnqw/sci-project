@@ -1,5 +1,4 @@
 import { apiRequest } from './utils';
-import { uploadImage } from './upload';
 
 export interface UserSummary {
   id: string;
@@ -270,27 +269,27 @@ class CompetitionsAPI {
 
     try {
       // Import upload service
-      const { uploadImage } = await import('./upload');
+      const { uploadImage, uploadMultipleImages } = await import('./upload');
 
       // Upload background image if provided as file
       if (backgroundImageFile) {
-        const uploadResult = await uploadImage(backgroundImageFile, {
-          category: 'competition-background',
-          competitionId
-        });
+        const uploadResult = await uploadImage(
+          backgroundImageFile,
+          'competition',
+          competitionId,
+          'background'
+        );
         backgroundImageUrl = uploadResult.url;
       }
 
       // Upload detail images if provided as files
       if (detailImageFiles && detailImageFiles.length > 0) {
-        const uploadPromises = detailImageFiles.map(file =>
-          uploadImage(file, {
-            category: 'competition-asset',
-            competitionId
-          })
+        const uploadResults = await uploadMultipleImages(
+          detailImageFiles,
+          'competition',
+          competitionId,
+          'detail'
         );
-
-        const uploadResults = await Promise.all(uploadPromises);
         const newDetailUrls = uploadResults.map(result => result.url);
         detailImageUrls = [...detailImageUrls, ...newDetailUrls];
       }

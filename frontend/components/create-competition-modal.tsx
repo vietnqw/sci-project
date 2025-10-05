@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { competitionsAPI, type CompetitionCreate } from '../app/api/competitions';
 import LocationSelector from './location-selector';
+import ImageUpload from './image-upload';
+import MultiImageUpload from './multi-image-upload';
 
 interface CreateCompetitionModalProps {
   isOpen: boolean;
@@ -396,79 +398,31 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
           </div>
 
           {/* Background Image Upload */}
-          <div>
-            <label htmlFor="background_image" className="block text-sm font-semibold text-gray-700 mb-2">
-              Background Image
-            </label>
-            <div className="space-y-3">
-              <input
-                id="background_image"
-                type="file"
-                accept="image/*"
-                onChange={handleBackgroundImageChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              />
-              {backgroundImagePreview && (
-                <div className="relative">
-                  <img
-                    src={backgroundImagePreview}
-                    alt="Background preview"
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                  <button
-                    type="button"
-                    onClick={removeBackgroundImage}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Optional: Upload an image for the competition background</p>
-          </div>
+          <ImageUpload
+            label="Background Image"
+            value={backgroundImageFile}
+            preview={backgroundImagePreview}
+            onChange={setBackgroundImageFile}
+            onPreviewChange={setBackgroundImagePreview}
+            onRemove={removeBackgroundImage}
+            maxSize={10}
+            helpText="Optional: Upload an image for the competition background"
+            error={errors.background_image}
+          />
 
           {/* Detail Images Upload */}
-          <div>
-            <label htmlFor="detail_images" className="block text-sm font-semibold text-gray-700 mb-2">
-              Detail Images
-            </label>
-            <div className="space-y-3">
-              <input
-                id="detail_images"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleDetailImagesChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              />
-              {detailImagePreviews.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {detailImagePreviews.map((preview, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={preview}
-                        alt={`Detail preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeDetailImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Optional: Upload multiple images to showcase the competition</p>
-          </div>
+          <MultiImageUpload
+            label="Detail Images"
+            value={detailImageFiles}
+            previews={detailImagePreviews}
+            onChange={setDetailImageFiles}
+            onPreviewsChange={setDetailImagePreviews}
+            onRemove={removeDetailImage}
+            maxFiles={5}
+            maxSize={10}
+            helpText="Optional: Upload multiple images to showcase the competition"
+            error={errors.detail_images}
+          />
 
           {/* Error message */}
           {errors.submit && (
