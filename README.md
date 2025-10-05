@@ -1,1 +1,1 @@
-# NaviMinD
+# SCI

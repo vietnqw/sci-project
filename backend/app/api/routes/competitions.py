@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -459,6 +459,279 @@ async def update_competition(
             if data["background_image_url"] is not None
             else None
         )
+
+    await db.flush()
+    await db.refresh(comp)
+
+    # Get owner information for response
+    owner_summary = None
+    if comp.owner_id:
+        owner_result = await db.execute(select(User).where(User.id == comp.owner_id))
+        owner = owner_result.scalar_one_or_none()
+        if owner:
+            owner_summary = UserSummary(
+                id=owner.id,
+                full_name=owner.full_name,
+                email=owner.email,
+            )
+
+    return CompetitionResponse.from_model(comp, owner_summary)
+
+
+@router.post("/{competition_id}/with-files", response_model=CompetitionResponse)
+async def update_competition_with_files(
+    competition_id: UUID,
+    request: Request,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CompetitionResponse:
+    """
+    Update competition with file uploads.
+
+    This endpoint handles updating competition information along with
+    background image and detail images uploads.
+    """
+    from app.services.s3_service import S3Service
+    import json
+
+    # Manually parse FormData
+    form_data = await request.form()
+
+    # Extract form fields
+    title = form_data.get("title")
+    description = form_data.get("description")
+    competition_link = form_data.get("competition_link")
+    registration_deadline = form_data.get("registration_deadline")
+    location_country = form_data.get("location_country")
+    location_city = form_data.get("location_city")
+    format = form_data.get("format")
+    scale = form_data.get("scale")
+    min_age = form_data.get("min_age")
+    max_age = form_data.get("max_age")
+    remove_background_image = form_data.get("remove_background_image")
+    remove_detail_images = form_data.get("remove_detail_images")
+
+    # Extract files
+    background_image = form_data.get("background_image")
+    detail_images = form_data.getlist("detail_images")
+
+    # Convert min_age and max_age to integers if provided
+    if min_age:
+        try:
+            min_age = int(min_age)
+        except (ValueError, TypeError):
+            min_age = None
+
+    if max_age:
+        try:
+            max_age = int(max_age)
+        except (ValueError, TypeError):
+            max_age = None
+
+    comp = await _get_competition_or_404(db, competition_id)
+
+    # Check permissions
+    if (
+        getattr(current_user, "role", None) != UserRole.ADMIN
+        and getattr(current_user, "id", None) != comp.owner_id
+    ):
+        raise ForbiddenCompetitionAccessError("Not allowed to update this competition")
+
+    # Initialize S3 service
+    s3_service = S3Service()
+
+    # Handle background image upload
+    if (
+        background_image
+        and hasattr(background_image, "filename")
+        and background_image.filename
+    ):
+        try:
+            # Generate presigned URL for background image
+            presigned_result = s3_service.generate_presigned_url(
+                entity="competition",
+                entity_id=str(competition_id),
+                purpose="background",
+                filename=background_image.filename,
+                content_type=getattr(background_image, "content_type", None)
+                or "image/jpeg",
+            )
+
+            if presigned_result:
+                # Upload to S3
+                import httpx
+
+                async with httpx.AsyncClient() as client:
+                    file_content = await background_image.read()
+                    await client.put(
+                        presigned_result["presignedUrl"],
+                        content=file_content,
+                        headers={
+                            "Content-Type": getattr(
+                                background_image, "content_type", None
+                            )
+                            or "image/jpeg"
+                        },
+                    )
+
+                # Update competition with new background image URL
+                comp.background_image_url = presigned_result["publicUrl"]
+        except Exception as e:
+            # Log error but continue with other updates
+            print(f"Error uploading background image: {e}")
+
+    # Handle detail images upload
+    if detail_images:
+        new_detail_urls = []
+        for detail_image in detail_images:
+            if hasattr(detail_image, "filename") and detail_image.filename:
+                try:
+                    # Generate presigned URL for detail image
+                    presigned_result = s3_service.generate_presigned_url(
+                        entity="competition",
+                        entity_id=str(competition_id),
+                        purpose="detail",
+                        filename=detail_image.filename,
+                        content_type=getattr(detail_image, "content_type", None)
+                        or "image/jpeg",
+                    )
+
+                    if presigned_result:
+                        # Upload to S3
+                        import httpx
+
+                        async with httpx.AsyncClient() as client:
+                            file_content = await detail_image.read()
+                            await client.put(
+                                presigned_result["presignedUrl"],
+                                content=file_content,
+                                headers={
+                                    "Content-Type": getattr(
+                                        detail_image, "content_type", None
+                                    )
+                                    or "image/jpeg"
+                                },
+                            )
+
+                        new_detail_urls.append(presigned_result["publicUrl"])
+                except Exception as e:
+                    # Log error but continue with other uploads
+                    print(f"Error uploading detail image: {e}")
+
+        # Update detail image URLs
+        if new_detail_urls:
+            existing_urls = comp.detail_image_urls_list or []
+            comp.detail_image_urls_list = existing_urls + new_detail_urls
+
+    # Handle image removals
+    if remove_background_image and remove_background_image.lower() in [
+        "true",
+        "1",
+        "yes",
+    ]:
+        # Delete from S3 if there's an existing image
+        if comp.background_image_url:
+            try:
+                # Extract S3 key from the URL
+                import re
+
+                url = comp.background_image_url
+
+                # Extract the path after the domain
+                if "cloudfront.net" in url:
+                    # CloudFront URL: extract path after domain
+                    path_match = re.search(r"https://[^/]+/(.+)", url)
+                    if path_match:
+                        s3_key = path_match.group(1)
+                    else:
+                        s3_key = None
+                else:
+                    # Direct S3 URL: extract path after bucket
+                    path_match = re.search(
+                        r"https://[^/]+\.s3\.[^/]+\.amazonaws\.com/(.+)", url
+                    )
+                    if path_match:
+                        s3_key = path_match.group(1)
+                    else:
+                        s3_key = None
+
+                if s3_key:
+                    await s3_service.delete_object(s3_key)
+            except Exception:
+                # Log error but continue with other updates
+                pass
+
+        # Clear the database field
+        comp.background_image_url = None
+
+    if remove_detail_images:
+        try:
+            urls_to_remove = json.loads(remove_detail_images)
+            existing_urls = comp.detail_image_urls_list or []
+
+            # Delete images from S3 before removing from database
+            for url_to_remove in urls_to_remove:
+                try:
+                    # Extract S3 key from the URL
+                    import re
+
+                    url = url_to_remove
+
+                    # Extract the path after the domain
+                    if "cloudfront.net" in url:
+                        # CloudFront URL: extract path after domain
+                        path_match = re.search(r"https://[^/]+/(.+)", url)
+                        if path_match:
+                            s3_key = path_match.group(1)
+                        else:
+                            s3_key = None
+                    else:
+                        # Direct S3 URL: extract path after bucket
+                        path_match = re.search(
+                            r"https://[^/]+\.s3\.[^/]+\.amazonaws\.com/(.+)", url
+                        )
+                        if path_match:
+                            s3_key = path_match.group(1)
+                        else:
+                            s3_key = None
+
+                    if s3_key:
+                        await s3_service.delete_object(s3_key)
+                except Exception:
+                    # Log error but continue with other deletions
+                    pass
+
+            # Update the database field
+            comp.detail_image_urls_list = [
+                url for url in existing_urls if url not in urls_to_remove
+            ]
+        except (json.JSONDecodeError, TypeError):
+            # Log error but continue with other updates
+            pass
+
+    # Update other fields
+    if title is not None:
+        comp.title = title
+    if description is not None:
+        comp.description = description
+    if competition_link is not None:
+        comp.competition_link = competition_link if competition_link else None
+    if registration_deadline is not None:
+        comp.registration_deadline = (
+            registration_deadline if registration_deadline else None
+        )
+    if location_country is not None:
+        comp.location_country = location_country if location_country else None
+    if location_city is not None:
+        comp.location_city = location_city if location_city else None
+    if format is not None:
+        comp.format = format if format else None
+    if scale is not None:
+        comp.scale = scale if scale else None
+    if min_age is not None:
+        comp.min_age = min_age
+    if max_age is not None:
+        comp.max_age = max_age
 
     await db.flush()
     await db.refresh(comp)

@@ -358,7 +358,7 @@ class CompetitionsAPI {
     }
 
     return apiRequest<Competition>(`/api/v1/competitions/${id}/with-files`, {
-      method: 'PUT',
+      method: 'POST',
       body: formData,
       requireAuth: true,
     });

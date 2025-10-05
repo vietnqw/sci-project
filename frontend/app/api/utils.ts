@@ -44,9 +44,13 @@ export async function apiRequest<T>(
 
   const url = `${API_BASE_URL}${endpoint}`;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  // Don't set Content-Type for FormData - let browser set it automatically
+  if (!(requestOptions.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (requireAuth) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
