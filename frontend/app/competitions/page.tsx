@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { competitionsAPI, formatLocation, type Competition } from "../api/competitions";
+import { fuzzyMatch } from "../../lib/fuzzy-search";
 
 const DEFAULT_LIMIT = 12;
 
@@ -152,10 +153,10 @@ function CompetitionsPageContent() {
   const filtered = useMemo(() => {
     const display = items.map(mapCompetitionToDisplay);
     return display.filter((c) => {
-      const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.overview.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = !search || fuzzyMatch(search, c.name) || fuzzyMatch(search, c.overview);
       const matchesScale = !scaleFilter || c.scale === scaleFilter;
       const matchesMode = !modeFilter || c.modes.includes(modeFilter);
-      const matchesLocation = !locationFilter || c.location.toLowerCase().includes(locationFilter.toLowerCase());
+      const matchesLocation = !locationFilter || fuzzyMatch(locationFilter, c.location);
       return matchesSearch && matchesScale && matchesMode && matchesLocation;
     });
   }, [items, search, scaleFilter, modeFilter, locationFilter]);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { fuzzyFilter, fuzzySort } from '../lib/fuzzy-search';
 
 interface SearchableDropdownProps {
   options: string[];
@@ -27,15 +28,14 @@ export default function SearchableDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Filter options based on search term
+  // Filter options based on search term using fuzzy matching
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredOptions(options);
     } else {
-      const filtered = options.filter(option =>
-        option.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredOptions(filtered);
+      const filtered = fuzzyFilter(options, searchTerm, option => option);
+      const sorted = fuzzySort(filtered, searchTerm, option => option);
+      setFilteredOptions(sorted);
     }
   }, [searchTerm, options]);
 
