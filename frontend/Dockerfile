@@ -8,8 +8,8 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package.json package-lock.json* ./
 
-# Install dependencies with memory limit
-RUN npm ci --only=production --no-audit --no-fund
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --no-audit --no-fund
 
 # Copy source code
 COPY . .
@@ -24,6 +24,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build with memory limit
 RUN npm run build
+
+# Clean up dev dependencies to reduce image size
+RUN npm prune --production
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
