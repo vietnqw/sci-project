@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usersAPI, type UserListParams, type UserListResponse, type UserUpdate } from '../../api/users';
 import type { User } from '../../api/auth';
 import { apiRequest, ApiError } from '../../api/utils';
+import { formatDateOnlyInUserTimeZone } from '../../../lib/date';
 
 interface ToastState {
   type: 'success' | 'error';
@@ -384,7 +385,7 @@ export default function AdminUsersPage() {
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(userItem.created_at).toLocaleDateString()}
+                          {formatDateOnlyInUserTimeZone(userItem.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex items-center gap-2 justify-center">
@@ -551,7 +552,7 @@ function UserDetailModal({ user, isOpen, onClose, onUpdate }: DetailModalProps) 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (user) {
+    if (isOpen && user) {
       setFormData({
         full_name: user.full_name || '',
         organization: user.organization || '',
@@ -559,7 +560,11 @@ function UserDetailModal({ user, isOpen, onClose, onUpdate }: DetailModalProps) 
       });
       setErrors({});
     }
-  }, [user]);
+    if (!isOpen) {
+      setFormData({});
+      setErrors({});
+    }
+  }, [user, isOpen]);
 
   if (!isOpen || !user) return null;
 
@@ -569,8 +574,8 @@ function UserDetailModal({ user, isOpen, onClose, onUpdate }: DetailModalProps) 
     if (!formData.organization?.trim()) nextErrors.organization = 'Organization is required';
     if (!formData.phone_number?.trim()) {
       nextErrors.phone_number = 'Phone number is required';
-    } else if (!/^\+?[1-9]\d{1,19}$/.test(formData.phone_number)) {
-      nextErrors.phone_number = 'Please enter a valid phone number (e.g., +1234567890)';
+    } else if (!/^\+[1-9]\d{6,14}$/.test(formData.phone_number)) {
+      nextErrors.phone_number = 'Enter a valid phone number with country code, 7–15 digits (e.g., +1234567890)';
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;

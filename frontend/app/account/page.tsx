@@ -10,6 +10,7 @@ import EditCompetitionModal from '../../components/edit-competition-modal';
 import ChangePasswordModal from '../../components/change-password-modal';
 import { competitionsAPI, Competition, formatLocation } from '../api/competitions';
 import { apiRequest, ApiError } from '../api/utils';
+import { formatInUserTimeZone, formatDateOnlyInUserTimeZone } from '../../lib/date';
 import type { User } from '../api/auth';
 
 type TabKey = 'profile' | 'competitions' | 'admin';
@@ -263,13 +264,13 @@ function AccountPageContent() {
   const stats = [
     { label: 'Role', value: user.role === 'ADMIN' ? 'Administrator' : 'Creator' },
     { label: 'Created Competitions', value: userCompetitions.length },
-    { label: 'Member Since', value: new Date(user.created_at).toLocaleDateString() },
+    { label: 'Member Since', value: formatDateOnlyInUserTimeZone(user.created_at) },
   ];
 
   return (
     <main className="min-h-screen bg-gray-50 py-10">
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+        <div className={`fixed top-6 right-6 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
           {toast.message}
         </div>
       )}
@@ -361,7 +362,7 @@ function AccountPageContent() {
                     </p>
                   </div>
                   <div className="space-y-3 text-sm text-gray-600">
-                    <Detail label="Last Updated" value={new Date(user.updated_at).toLocaleString()} />
+                    <Detail label="Last Updated" value={formatInUserTimeZone(user.updated_at)} />
                   </div>
                   <div className="mt-auto flex flex-col gap-2">
                     <button
@@ -582,7 +583,7 @@ function AccountPageContent() {
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                       </svg>
-                                      Registration deadline: {new Date(competition.registration_deadline).toLocaleDateString()}
+                                      Registration deadline: {formatDateOnlyInUserTimeZone(competition.registration_deadline)}
                                     </p>
                                   )}
                                   {/* Show rejection reason for rejected competitions */}
@@ -598,7 +599,7 @@ function AccountPageContent() {
                                     </div>
                                   )}
                                   <p className="text-xs text-gray-400 mt-1">
-                                    Created {new Date(competition.created_at).toLocaleDateString()}
+                                    Created {formatDateOnlyInUserTimeZone(competition.created_at)}
                                   </p>
                                 </div>
                               </div>

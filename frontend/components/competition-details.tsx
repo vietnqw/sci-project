@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Competition, formatLocation } from '../app/api/competitions';
+import { formatDateOnlyInUserTimeZone } from '../lib/date';
 import { useAuth } from '../app/contexts/AuthContext';
 import Breadcrumb from './breadcrumb';
 import CountdownClock from './countdown-clock';
@@ -25,11 +26,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Not specified';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    return formatDateOnlyInUserTimeZone(dateString);
   };
 
   const formatAgeRange = (min?: number, max?: number) => {

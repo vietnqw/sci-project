@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { formatDateOnlyInUserTimeZone } from '../../../lib/date';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { competitionsAPI, type Competition, type CompetitionListResponse } from '../../api/competitions';
@@ -414,7 +415,7 @@ function AdminCompetitionsPageContent() {
                           </div>
                         </td>
 
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(c.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateOnlyInUserTimeZone(c.created_at)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex items-center gap-2 justify-center">
                             <ActionButton

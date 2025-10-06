@@ -105,9 +105,9 @@ export default function SignupPage() {
 
   const validatePhoneNumber = (phoneNumber: string): string | undefined => {
     if (!phoneNumber) return 'Phone number is required';
-    const phoneRegex = /^\+?[1-9]\d{1,19}$/;
+    const phoneRegex = /^\+[1-9]\d{6,14}$/; // E.164: + and 7–15 digits total
     if (!phoneRegex.test(phoneNumber)) {
-      return 'Please enter a valid phone number (e.g., +1234567890)';
+      return 'Enter a valid phone number with country code, 7–15 digits (e.g., +1234567890)';
     }
     return undefined;
   };

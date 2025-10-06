@@ -21,7 +21,7 @@ const UserProfileForm = ({ user, isOpen, onClose, onUpdate, isLoading = false }:
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (user) {
+    if (isOpen && user) {
       setFormData({
         full_name: user.full_name || '',
         organization: user.organization || '',
@@ -29,7 +29,7 @@ const UserProfileForm = ({ user, isOpen, onClose, onUpdate, isLoading = false }:
       });
       setErrors({});
     }
-  }, [user]);
+  }, [user, isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -37,8 +37,8 @@ const UserProfileForm = ({ user, isOpen, onClose, onUpdate, isLoading = false }:
     if (!formData.organization?.trim()) newErrors.organization = 'Organization is required';
     if (!formData.phone_number?.trim()) {
       newErrors.phone_number = 'Phone number is required';
-    } else if (!/^\+?[1-9]\d{1,19}$/.test(formData.phone_number)) {
-      newErrors.phone_number = 'Please enter a valid phone number (e.g., +1234567890)';
+    } else if (!/^\+[1-9]\d{6,14}$/.test(formData.phone_number)) {
+      newErrors.phone_number = 'Enter a valid phone number with country code, 7–15 digits (e.g., +1234567890)';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -59,8 +59,8 @@ const UserProfileForm = ({ user, isOpen, onClose, onUpdate, isLoading = false }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-[9998]" onClick={onClose}>
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" disabled={isLoading}>
@@ -115,7 +115,7 @@ const UserProfileForm = ({ user, isOpen, onClose, onUpdate, isLoading = false }:
               required
               disabled={isLoading}
             />
-            {errors.phone_number && <p className="mt-1 text-sm text-red-600">{errors.phone_number}</p>}
+            {errors.phone_number && <p className="mt-1 text-sm text-red-600 z-[10000] relative">{errors.phone_number}</p>}
           </div>
 
           <div className="flex items-center gap-3 pt-4">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getUserTimeZone, parseDateRespectingUTCIfNoTZ } from '../lib/date';
 
 interface CountdownClockProps {
   deadline: string;
@@ -17,8 +18,10 @@ const CountdownClock: React.FC<CountdownClockProps> = ({ deadline }) => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const deadlineTime = new Date(deadline).getTime();
+      const tz = getUserTimeZone();
+      const now = Date.now();
+      // Interpret backend datetime; if no TZ present, assume UTC
+      const deadlineTime = parseDateRespectingUTCIfNoTZ(deadline).getTime();
       const difference = deadlineTime - now;
 
       if (difference > 0) {

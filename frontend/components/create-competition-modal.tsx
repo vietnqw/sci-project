@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { competitionsAPI, type CompetitionCreate } from '../app/api/competitions';
+import { toUtcISOString } from '../lib/date';
 import LocationSelector from './location-selector';
 import ImageUpload from './image-upload';
 import MultiImageUpload from './multi-image-upload';
@@ -35,6 +36,22 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
   const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(null);
   const [detailImagePreviews, setDetailImagePreviews] = useState<string[]>([]);
 
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset on close
+      setFormData({
+        title: '', description: '', competition_link: '', registration_deadline: '',
+        background_image_url: '', location_country: '', location_city: '',
+        format: undefined, scale: undefined, min_age: undefined, max_age: undefined,
+      });
+      setBackgroundImageFile(null);
+      setDetailImageFiles([]);
+      setBackgroundImagePreview(null);
+      setDetailImagePreviews([]);
+      setErrors({});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -136,8 +153,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
         title: formData.title,
         description: formData.description || undefined,
         competition_link: formData.competition_link || undefined,
-        registration_deadline: formData.registration_deadline ?
-          new Date(formData.registration_deadline).toISOString() : undefined,
+        registration_deadline: formData.registration_deadline ? toUtcISOString(formData.registration_deadline) : undefined,
         background_image_url: formData.background_image_url || undefined,
         location_country: formData.location_country || undefined,
         location_city: formData.location_city || undefined,

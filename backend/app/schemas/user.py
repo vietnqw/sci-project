@@ -9,7 +9,7 @@ from pydantic import ConfigDict
 from app.models.user import UserRole
 
 
-PHONE_REGEX = re.compile(r"^\+?[1-9]\d{9,14}$")  # E.164: 10-15 digits
+PHONE_REGEX = re.compile(r"^\+[1-9]\d{6,14}$")  # E.164: + and 7-15 digits total
 
 
 class UserValidationMixin:
@@ -84,7 +84,10 @@ class UserProfileBase(UserBase):
     """Shared profile fields used by create/response schemas."""
 
     phone_number: str = Field(
-        ..., min_length=10, max_length=16, description="Phone number in E.164 format"
+        ...,
+        min_length=8,
+        max_length=16,
+        description="Phone number in E.164 format (e.g., +1234567890)",
     )
     organization: str = Field(
         ..., min_length=1, max_length=255, description="Organization of the user"
@@ -130,7 +133,10 @@ class UserUpdate(UserValidationMixin, BaseModel):
         None, min_length=1, max_length=255, description="Full name of the user"
     )
     phone_number: str | None = Field(
-        None, min_length=10, max_length=16, description="Phone number in E.164 format"
+        None,
+        min_length=8,
+        max_length=16,
+        description="Phone number in E.164 format (e.g., +1234567890)",
     )
     organization: str | None = Field(
         None, min_length=1, max_length=255, description="Organization of the user"

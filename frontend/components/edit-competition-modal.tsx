@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { competitionsAPI, type CompetitionUpdate, type Competition, formatLocation } from '../app/api/competitions';
+import { toUtcISOString } from '../lib/date';
 import LocationSelector from './location-selector';
 import EditImageUpload from './edit-image-upload';
 import EditMultiImageUpload from './edit-multi-image-upload';
@@ -175,9 +176,7 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
         title: formData.title,
         ...(formData.description && { description: formData.description }),
         ...(formData.competition_link && { competition_link: formData.competition_link }),
-        ...(formData.registration_deadline && {
-          registration_deadline: new Date(formData.registration_deadline).toISOString()
-        }),
+        ...(formData.registration_deadline && { registration_deadline: toUtcISOString(formData.registration_deadline) }),
         ...(formData.background_image_url && { background_image_url: formData.background_image_url }),
         ...(formData.location_country && { location_country: formData.location_country }),
         ...(formData.location_city && { location_city: formData.location_city }),
@@ -212,7 +211,7 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
   };
 
   const handleClose = () => {
-    // Reset file states
+    // Reset file and form states
     setBackgroundImageFile(null);
     setDetailImageFiles([]);
     setBackgroundImagePreview(null);
@@ -220,6 +219,11 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
     setRemoveBackgroundImage(false);
     setRemoveDetailImages([]);
     setErrors({});
+    setFormData({
+      title: '', description: '', competition_link: '', registration_deadline: '',
+      background_image_url: '', location_country: '', location_city: '',
+      format: undefined, scale: undefined, min_age: null, max_age: null,
+    });
     onClose();
   };
 
