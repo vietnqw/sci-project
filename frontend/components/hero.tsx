@@ -50,12 +50,6 @@ const Hero = () => (
             <Link href="/competitions" className="bg-gray-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors text-center text-sm sm:text-base">
               View all competitions
             </Link>
-            <button className="border border-gray-800 text-gray-800 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 flex items-center justify-center gap-2 transition-colors text-sm sm:text-base">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25M12 18.75V21M4.219 4.219l1.591 1.591M18.19 18.19l1.591 1.591M3 12h2.25M18.75 12H21M4.219 19.781l1.591-1.591M18.19 5.81l1.591-1.591M8.25 12a3.75 3.75 0 117.5 0 3.75 3.75 0 01-7.5 0z" />
-              </svg>
-              Get AI recommendations
-            </button>
           </div>
 
           {/* Logos - responsive grid */}
