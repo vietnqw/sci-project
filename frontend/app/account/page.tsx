@@ -50,6 +50,8 @@ function AccountPageContent() {
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
   const [activeCompetitionTab, setActiveCompetitionTab] = useState<CompetitionTabKey>('approved');
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [competitionIdToDelete, setCompetitionIdToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -153,11 +155,15 @@ function AccountPageContent() {
     }
   };
 
-  const handleDeleteCompetition = async (competitionId: string) => {
-    const confirmed = window.confirm('Are you sure you want to delete this competition? This action cannot be undone.');
-    if (!confirmed) return;
+  const requestDeleteCompetition = (competitionId: string) => {
+    setCompetitionIdToDelete(competitionId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteCompetition = async () => {
+    if (!competitionIdToDelete) return;
     try {
-      await competitionsAPI.deleteCompetition(competitionId);
+      await competitionsAPI.deleteCompetition(competitionIdToDelete);
       setToast({ type: 'success', message: 'Competition deleted successfully.' });
       setTimeout(() => setToast(null), 2500);
       await fetchUserCompetitions();
@@ -165,6 +171,9 @@ function AccountPageContent() {
       const message = error instanceof Error ? error.message : 'Failed to delete competition.';
       setToast({ type: 'error', message });
       setTimeout(() => setToast(null), 3000);
+    } finally {
+      setIsDeleteConfirmOpen(false);
+      setCompetitionIdToDelete(null);
     }
   };
 
@@ -643,7 +652,7 @@ function AccountPageContent() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteCompetition(competition.id)}
+                              onClick={() => requestDeleteCompetition(competition.id)}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
                             >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -757,6 +766,36 @@ function AccountPageContent() {
         onSuccess={handleEditCompetitionSuccess}
         competition={selectedCompetition}
       />
+
+      {/* Pretty Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm px-4 py-8">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                  <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Delete competition?</h3>
+              </div>
+              <button onClick={() => { setIsDeleteConfirmOpen(false); setCompetitionIdToDelete(null); }} className="text-gray-400 hover:text-gray-600 cursor-pointer" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-4">This action cannot be undone. The competition will be permanently removed.</p>
+              <div className="flex items-center justify-end gap-3">
+                <button onClick={() => { setIsDeleteConfirmOpen(false); setCompetitionIdToDelete(null); }} className="px-4 py-2 border border-gray-300 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+                <button onClick={confirmDeleteCompetition} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors cursor-pointer">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Change Password Modal */}
       <ChangePasswordModal

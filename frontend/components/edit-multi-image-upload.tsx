@@ -107,10 +107,10 @@ export default function EditMultiImageUpload({
   };
 
   const handleRemoveNew = (index: number) => {
-    const newFiles = newFiles.filter((_, i) => i !== index);
-    const newPreviews = newPreviews.filter((_, i) => i !== index);
-    onFilesChange(newFiles);
-    onPreviewsChange(newPreviews);
+    const updatedFiles = newFiles.filter((_, i) => i !== index);
+    const updatedPreviews = newPreviews.filter((_, i) => i !== index);
+    onFilesChange(updatedFiles);
+    onPreviewsChange(updatedPreviews);
   };
 
   const formatFileSize = (bytes: number) => {

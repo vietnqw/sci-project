@@ -16,6 +16,7 @@ interface CreateCompetitionModalProps {
 export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: CreateCompetitionModalProps) {
   const [formData, setFormData] = useState<CompetitionCreate>({
     title: '',
+    overview: '',
     description: '',
     competition_link: '',
     registration_deadline: '',
@@ -41,7 +42,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
     if (!isOpen) {
       // Reset on close
       setFormData({
-        title: '', description: '', competition_link: '', registration_deadline: '',
+        title: '', overview: '', description: '', competition_link: '', registration_deadline: '',
         background_image_url: '', location_country: '', location_city: '',
         format: undefined, scale: undefined, min_age: undefined, max_age: undefined,
       });
@@ -65,16 +66,26 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
       newErrors.title = 'Title must be 255 characters or less';
     }
 
-    if (formData.description && formData.description.length > 2000) {
-      newErrors.description = 'Description must be 2000 characters or less';
+    if (formData.overview && formData.overview.length > 255) {
+      newErrors.overview = 'Overview must be 255 characters or less';
+    }
+
+    if (formData.description && formData.description.length > 8000) {
+      newErrors.description = 'Description must be 8000 characters or less';
     }
 
     if (formData.competition_link && !isValidUrl(formData.competition_link)) {
       newErrors.competition_link = 'Please enter a valid URL (e.g., https://example.com)';
     }
+    if (formData.competition_link && formData.competition_link.length > 500) {
+      newErrors.competition_link = 'Link must be 500 characters or less';
+    }
 
     if (formData.background_image_url && !isValidUrl(formData.background_image_url)) {
       newErrors.background_image_url = 'Please enter a valid URL';
+    }
+    if (formData.background_image_url && formData.background_image_url.length > 500) {
+      newErrors.background_image_url = 'Image URL must be 500 characters or less';
     }
 
     if (!formData.location_country?.trim()) {
@@ -151,6 +162,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
       // Prepare data for submission
       const submitData: CompetitionCreate = {
         title: formData.title,
+        overview: formData.overview || undefined,
         description: formData.description || undefined,
         competition_link: formData.competition_link || undefined,
         registration_deadline: formData.registration_deadline ? toUtcISOString(formData.registration_deadline) : undefined,
@@ -177,6 +189,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
       // Reset form
       setFormData({
         title: '',
+        overview: '',
         description: '',
         competition_link: '',
         registration_deadline: '',
@@ -207,6 +220,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
   const handleClose = () => {
     setFormData({
       title: '',
+      overview: '',
       description: '',
       competition_link: '',
       registration_deadline: '',
@@ -269,6 +283,27 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
             {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
           </div>
 
+        {/* Overview */}
+        <div>
+          <label htmlFor="overview" className="block text-sm font-semibold text-gray-700 mb-2">
+            Overview
+          </label>
+          <textarea
+            id="overview"
+            value={formData.overview}
+            onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-h-[80px] ${
+              errors.overview ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Short summary shown in listings"
+            maxLength={255}
+          />
+          <div className="mt-1 flex items-center justify-between">
+            {errors.overview && <p className="text-sm text-red-500">{errors.overview}</p>}
+            <p className="text-xs text-gray-500 ml-auto">{formData.overview?.length || 0}/255</p>
+          </div>
+        </div>
+
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -282,11 +317,11 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
                 errors.description ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Provide a brief description of the competition..."
-              maxLength={2000}
+              maxLength={8000}
             />
             <div className="mt-1 flex items-center justify-between">
               {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
-              <p className="text-xs text-gray-500 ml-auto">{formData.description?.length || 0}/2000</p>
+              <p className="text-xs text-gray-500 ml-auto">{formData.description?.length || 0}/8000</p>
             </div>
           </div>
 
@@ -409,6 +444,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
                 errors.competition_link ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="https://example.com"
+              maxLength={500}
             />
             {errors.competition_link && <p className="mt-1 text-sm text-red-500">{errors.competition_link}</p>}
           </div>

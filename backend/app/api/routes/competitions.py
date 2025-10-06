@@ -361,6 +361,7 @@ async def create_competition(
     """
     comp = Competition(
         title=payload.title,
+        overview=payload.overview,
         description=payload.description,
         competition_link=(
             str(payload.competition_link) if payload.competition_link else None
@@ -427,6 +428,7 @@ async def update_competition(
         comp.detail_image_urls_list = data.pop("detail_image_urls")
     for field in (
         "title",
+        "overview",
         "description",
         "registration_deadline",
         "format",
@@ -449,9 +451,7 @@ async def update_competition(
     # Optional URL fields
     if "competition_link" in data:
         comp.competition_link = (
-            str(data["competition_link"])
-            if data["competition_link"] is not None
-            else None
+            str(data["competition_link"]) if data["competition_link"] else None
         )
     if "background_image_url" in data:
         comp.background_image_url = (
@@ -540,6 +540,9 @@ async def update_competition_with_files(
     # Initialize S3 service
     s3_service = S3Service()
 
+    # Track whether a new background image is uploaded in this request
+    background_replaced = False
+
     # Handle background image upload
     if (
         background_image
@@ -576,6 +579,7 @@ async def update_competition_with_files(
 
                 # Update competition with new background image URL
                 comp.background_image_url = presigned_result["publicUrl"]
+                background_replaced = True
         except Exception as e:
             # Log error but continue with other updates
             print(f"Error uploading background image: {e}")
@@ -624,11 +628,16 @@ async def update_competition_with_files(
             comp.detail_image_urls_list = existing_urls + new_detail_urls
 
     # Handle image removals
-    if remove_background_image and remove_background_image.lower() in [
-        "true",
-        "1",
-        "yes",
-    ]:
+    if (
+        (not background_replaced)
+        and remove_background_image
+        and remove_background_image.lower()
+        in [
+            "true",
+            "1",
+            "yes",
+        ]
+    ):
         # Delete from S3 if there's an existing image
         if comp.background_image_url:
             try:

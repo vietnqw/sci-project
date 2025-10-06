@@ -59,7 +59,7 @@ export interface CompetitionUpdate {
   title?: string;
   overview?: string;
   description?: string;
-  competition_link?: string;
+  competition_link?: string | null;
   registration_deadline?: string;
   background_image_url?: string;
   detail_image_urls?: string[];
@@ -67,8 +67,8 @@ export interface CompetitionUpdate {
   location_city?: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
   scale?: 'PROVINCIAL' | 'REGIONAL' | 'INTERNATIONAL' | 'NATIONAL';
-  min_age?: number;
-  max_age?: number;
+  min_age?: number | null;
+  max_age?: number | null;
 }
 
 class CompetitionsAPI {
@@ -329,8 +329,9 @@ class CompetitionsAPI {
 
     // Add text fields
     if (data.title) formData.append('title', data.title);
-    if (data.description) formData.append('description', data.description);
-    if (data.competition_link) formData.append('competition_link', data.competition_link);
+    if (data.overview) formData.append('overview', data.overview);
+    if (data.description !== undefined) formData.append('description', data.description ?? '');
+    if (data.competition_link !== undefined) formData.append('competition_link', data.competition_link ?? '');
     if (data.registration_deadline) formData.append('registration_deadline', data.registration_deadline);
     if (data.location_country) formData.append('location_country', data.location_country);
     if (data.location_city) formData.append('location_city', data.location_city);

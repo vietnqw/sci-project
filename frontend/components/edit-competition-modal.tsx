@@ -8,6 +8,7 @@ import EditImageUpload from './edit-image-upload';
 import EditMultiImageUpload from './edit-multi-image-upload';
 
 interface EditFormData extends Omit<CompetitionUpdate, 'min_age' | 'max_age'> {
+  overview?: string;
   min_age: number | null;
   max_age: number | null;
 }
@@ -22,6 +23,7 @@ interface EditCompetitionModalProps {
 export default function EditCompetitionModal({ isOpen, onClose, onSuccess, competition }: EditCompetitionModalProps) {
   const [formData, setFormData] = useState<EditFormData>({
     title: '',
+    // add overview support by keeping description and overview distinct in API payload
     description: '',
     competition_link: '',
     registration_deadline: '',
@@ -49,6 +51,8 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
     if (competition && isOpen) {
       setFormData({
         title: competition.title || '',
+        overview: (competition as any).overview || '',
+        // overview is part of API model; preserve if present
         description: competition.description || '',
         competition_link: competition.competition_link || '',
         registration_deadline: competition.registration_deadline ?
@@ -83,16 +87,22 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
       newErrors.title = 'Title must be 255 characters or less';
     }
 
-    if (formData.description && formData.description.length > 2000) {
-      newErrors.description = 'Description must be 2000 characters or less';
+    if (formData.description && formData.description.length > 8000) {
+      newErrors.description = 'Description must be 8000 characters or less';
     }
 
     if (formData.competition_link && !isValidUrl(formData.competition_link)) {
       newErrors.competition_link = 'Please enter a valid URL (e.g., https://example.com)';
     }
+    if (formData.competition_link && formData.competition_link.length > 500) {
+      newErrors.competition_link = 'Link must be 500 characters or less';
+    }
 
     if (formData.background_image_url && !isValidUrl(formData.background_image_url)) {
       newErrors.background_image_url = 'Please enter a valid URL';
+    }
+    if (formData.background_image_url && formData.background_image_url.length > 500) {
+      newErrors.background_image_url = 'Image URL must be 500 characters or less';
     }
 
     if (!formData.location_country?.trim()) {
@@ -102,12 +112,9 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
       newErrors.location_city = 'City/State is required';
     }
 
-    if (!formData.format) {
-      newErrors.format = 'Format is required';
-    }
-    if (!formData.scale) {
-      newErrors.scale = 'Scale is required';
-    }
+    // format and scale required
+    if (!formData.format) newErrors.format = 'Format is required';
+    if (!formData.scale) newErrors.scale = 'Scale is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -172,19 +179,26 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
     setIsSubmitting(true);
     try {
       // Prepare data for submission - only include fields that have values
-      const submitData: CompetitionUpdate = {
-        title: formData.title,
-        ...(formData.description && { description: formData.description }),
-        ...(formData.competition_link && { competition_link: formData.competition_link }),
-        ...(formData.registration_deadline && { registration_deadline: toUtcISOString(formData.registration_deadline) }),
-        ...(formData.background_image_url && { background_image_url: formData.background_image_url }),
-        ...(formData.location_country && { location_country: formData.location_country }),
-        ...(formData.location_city && { location_city: formData.location_city }),
-        ...(formData.format && { format: formData.format }),
-        ...(formData.scale && { scale: formData.scale }),
-        ...(formData.min_age !== null && { min_age: formData.min_age }),
-        ...(formData.max_age !== null && { max_age: formData.max_age }),
-      };
+      const submitData: CompetitionUpdate = {};
+      // Only send fields that changed; allow explicit empty strings to clear
+      if (formData.title !== competition.title) submitData.title = formData.title;
+      if (formData.overview !== (competition as any).overview) submitData.overview = formData.overview as string | undefined;
+      if (formData.description !== (competition.description || '')) submitData.description = formData.description as string | undefined;
+      if (formData.competition_link !== (competition.competition_link || '')) submitData.competition_link = formData.competition_link === '' ? null : (formData.competition_link as string);
+      if (formData.registration_deadline) {
+        const iso = toUtcISOString(formData.registration_deadline);
+        if (iso !== (competition.registration_deadline || '')) submitData.registration_deadline = iso;
+      } else if (competition.registration_deadline) {
+        // cleared
+        submitData.registration_deadline = '' as any as string; // backend can treat empty as null
+      }
+      if (formData.background_image_url !== (competition.background_image_url || '')) submitData.background_image_url = formData.background_image_url as string | undefined;
+      if (formData.location_country !== (competition.location_country || '')) submitData.location_country = formData.location_country as string | undefined;
+      if (formData.location_city !== (competition.location_city || '')) submitData.location_city = formData.location_city as string | undefined;
+      if (formData.format !== (competition.format || undefined)) submitData.format = formData.format as any;
+      if (formData.scale !== (competition.scale || undefined)) submitData.scale = formData.scale as any;
+      if ((formData.min_age ?? undefined) !== (competition.min_age ?? undefined)) submitData.min_age = formData.min_age;
+      if ((formData.max_age ?? undefined) !== (competition.max_age ?? undefined)) submitData.max_age = formData.max_age;
 
       // Use file upload API if files are provided or being removed, otherwise use regular API
       if (backgroundImageFile || detailImageFiles.length > 0 || removeBackgroundImage || removeDetailImages.length > 0) {
@@ -272,7 +286,25 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="overview" className="block text-sm font-semibold text-gray-700 mb-2">
+              Overview
+            </label>
+            <textarea
+              id="overview"
+              value={(formData as any).overview || ''}
+              onChange={(e) => setFormData({ ...(formData as any), overview: e.target.value } as any)}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-h-[80px] ${
+                (errors as any).overview ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Short summary shown in listings"
+              maxLength={255}
+            />
+            <div className="mt-1 flex items-center justify-between">
+              {(errors as any).overview && <p className="text-sm text-red-500">{(errors as any).overview}</p>}
+              <p className="text-xs text-gray-500 ml-auto">{((formData as any).overview?.length || 0)}/255</p>
+            </div>
+
+            <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2 mt-4">
               Description
             </label>
             <textarea
@@ -283,11 +315,11 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
                 errors.description ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Provide a brief description of the competition..."
-              maxLength={2000}
+              maxLength={8000}
             />
             <div className="mt-1 flex items-center justify-between">
               {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
-              <p className="text-xs text-gray-500 ml-auto">{formData.description?.length || 0}/2000</p>
+              <p className="text-xs text-gray-500 ml-auto">{formData.description?.length || 0}/8000</p>
             </div>
           </div>
 
@@ -402,7 +434,7 @@ export default function EditCompetitionModal({ isOpen, onClose, onSuccess, compe
             <input
               id="competition_link"
               type="url"
-              value={formData.competition_link}
+              value={formData.competition_link ?? ''}
               onChange={(e) => setFormData({ ...formData, competition_link: e.target.value })}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                 errors.competition_link ? 'border-red-500' : 'border-gray-300'
