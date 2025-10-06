@@ -120,3 +120,24 @@ function calculateRelevanceScore(searchTerm: string, targetText: string): number
 
   return score;
 }
+
+/**
+ * Word-level matching: all words in searchTerm must appear in targetText
+ * (order-independent). Case- and accent-insensitive.
+ */
+export function wordMatch(searchTerm: string, targetText: string): boolean {
+  if (!searchTerm.trim()) return true;
+
+  const normalizedSearch = normalizeText(searchTerm);
+  const normalizedTarget = normalizeText(targetText);
+
+  if (!normalizedSearch) return true;
+
+  const words = normalizedSearch.split(' ').map(w => w.trim()).filter(Boolean);
+  if (words.length === 0) return true;
+
+  for (const w of words) {
+    if (!normalizedTarget.includes(w)) return false;
+  }
+  return true;
+}

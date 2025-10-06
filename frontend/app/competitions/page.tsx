@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { competitionsAPI, formatLocation, type Competition } from "../api/competitions";
-import { fuzzyMatch } from "../../lib/fuzzy-search";
+import { wordMatch } from "../../lib/fuzzy-search";
 
 const DEFAULT_LIMIT = 12;
 
@@ -63,10 +63,12 @@ function CompetitionsPageContent() {
 
   // Filters & query
   const [search, setSearch] = useState("");
-  const [scaleFilter, setScaleFilter] = useState("");
-  const [modeFilter, setModeFilter] = useState("");
+  const [scaleFilter, setScaleFilter] = useState<string[]>([]);
+  const [modeFilter, setModeFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState("");
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [isScaleOpen, setIsScaleOpen] = useState(false);
+  const [isModeOpen, setIsModeOpen] = useState(false);
 
   // Pagination via URL (?page, ?limit) for client-side pagination
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -110,8 +112,8 @@ function CompetitionsPageContent() {
       setLoading(true);
       setError(null);
       try {
-        const apiFormat = modeFilter ? modeFilter.toUpperCase() : undefined;
-        const apiScale = scaleFilter ? scaleFilter.toUpperCase() : undefined;
+        const apiFormat = undefined; // client-side filter only
+        const apiScale = undefined; // client-side filter only
         const resp: any = await competitionsAPI.getPublicCompetitions({
           // Fetch all competitions for client-side filtering and pagination
           skip: 0,
@@ -137,29 +139,36 @@ function CompetitionsPageContent() {
     return () => {
       ignore = true;
     };
-  }, [scaleFilter, modeFilter]); // Removed pagination and location dependencies since we fetch all data
+  }, []); // Fetch once; all filters are client-side
 
   // Build options from current page data (same behavior as old UI)
+  // Pre-filtered display list based on search and location only (for dynamic options)
+  const preFilteredDisplay = useMemo(() => {
+    const display = items.map(mapCompetitionToDisplay);
+    return display.filter((c) => {
+      const matchesSearch = !search || wordMatch(search, c.name);
+      const matchesLocation = !locationFilter || wordMatch(locationFilter, c.location);
+      return matchesSearch && matchesLocation;
+    });
+  }, [items, search, locationFilter]);
+
+  // Dynamic options based on current pre-filtered list
   const { scales, modes, locations } = useMemo(() => {
-    if (!items?.length) return { scales: [] as string[], modes: [] as string[], locations: [] as string[] };
-    const toTitle = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "");
-    const s = Array.from(new Set(items.map((c) => (c?.scale ? toTitle(c.scale) : "")).filter(Boolean)));
-    const m = Array.from(new Set(items.map((c) => (c?.format ? toTitle(c.format) : "")).filter(Boolean)));
-    const l = Array.from(new Set(items.map((c) => formatLocation(c)).filter(Boolean)));
+    if (!preFilteredDisplay.length) return { scales: [] as string[], modes: [] as string[], locations: [] as string[] };
+    const s = Array.from(new Set(preFilteredDisplay.map((c) => c.scale).filter(Boolean)));
+    const m = Array.from(new Set(preFilteredDisplay.flatMap((c) => c.modes).filter(Boolean)));
+    const l = Array.from(new Set(preFilteredDisplay.map((c) => c.location).filter(Boolean)));
     return { scales: s, modes: m, locations: l };
-  }, [items]);
+  }, [preFilteredDisplay]);
 
   // Client-side filtering and pagination
   const filtered = useMemo(() => {
-    const display = items.map(mapCompetitionToDisplay);
-    return display.filter((c) => {
-      const matchesSearch = !search || fuzzyMatch(search, c.name) || fuzzyMatch(search, c.overview);
-      const matchesScale = !scaleFilter || c.scale === scaleFilter;
-      const matchesMode = !modeFilter || c.modes.includes(modeFilter);
-      const matchesLocation = !locationFilter || fuzzyMatch(locationFilter, c.location);
-      return matchesSearch && matchesScale && matchesMode && matchesLocation;
+    return preFilteredDisplay.filter((c) => {
+      const matchesScale = scaleFilter.length === 0 || scaleFilter.includes(c.scale);
+      const matchesMode = modeFilter.length === 0 || c.modes.some((m: string) => modeFilter.includes(m));
+      return matchesScale && matchesMode;
     });
-  }, [items, search, scaleFilter, modeFilter, locationFilter]);
+  }, [preFilteredDisplay, scaleFilter, modeFilter]);
 
   // Client-side pagination
   const paginatedItems = useMemo(() => {
@@ -274,59 +283,127 @@ function CompetitionsPageContent() {
               />
             </div>
 
-            {/* Scale Filter */}
-            <div className="w-full sm:w-40 space-y-2">
+            {/* Scale Filter (Checkbox Dropdown) */}
+            <div className="w-full sm:w-64 space-y-2 relative">
               <label htmlFor="scale-filter" className="block text-sm font-medium text-gray-700">Scale</label>
-              <div className="relative">
-                <select
-                  id="scale-filter"
-                  value={scaleFilter}
-                  onChange={(e) => setScaleFilter(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                  aria-label="Filter by scale"
-                >
-                  <option value="">All scales</option>
-                  {scales.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              <button
+                id="scale-filter"
+                type="button"
+                onClick={() => setIsScaleOpen((v) => !v)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                aria-haspopup="listbox"
+                aria-expanded={isScaleOpen}
+              >
+                <span className="truncate">{scaleFilter.length ? `${scaleFilter.length} selected` : 'All scales'}</span>
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isScaleOpen && (
+                <div className="absolute z-50 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <ul role="listbox" aria-label="Filter by scale" className="divide-y divide-gray-100">
+                    <li className="px-3 py-2">
+                      <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                          checked={scaleFilter.length === 0}
+                          onChange={() => setScaleFilter([])}
+                          aria-label="All scales"
+                        />
+                        <span className="text-sm text-gray-700">All scales</span>
+                      </label>
+                    </li>
+                    {scales.map((s) => {
+                      const checked = scaleFilter.includes(s);
+                      return (
+                        <li key={s} className="px-3 py-2">
+                          <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                              checked={checked}
+                              onChange={() => {
+                                setScaleFilter((prev) => {
+                                  if (prev.includes(s)) return prev.filter((v) => v !== s);
+                                  return [...prev, s];
+                                });
+                              }}
+                              aria-label={`Filter by scale ${s}`}
+                            />
+                            <span className="text-sm text-gray-700">{s}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Format Filter */}
-            <div className="w-full sm:w-40 space-y-2">
+            {/* Format Filter (Checkbox Dropdown) */}
+            <div className="w-full sm:w-64 space-y-2 relative">
               <label htmlFor="mode-filter" className="block text-sm font-medium text-gray-700">Format</label>
-              <div className="relative">
-                <select
-                  id="mode-filter"
-                  value={modeFilter}
-                  onChange={(e) => setModeFilter(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                  aria-label="Filter by format"
-                >
-                  <option value="">All formats</option>
-                  {modes.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              <button
+                id="mode-filter"
+                type="button"
+                onClick={() => setIsModeOpen((v) => !v)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                aria-haspopup="listbox"
+                aria-expanded={isModeOpen}
+              >
+                <span className="truncate">{modeFilter.length ? `${modeFilter.length} selected` : 'All formats'}</span>
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isModeOpen && (
+                <div className="absolute z-50 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <ul role="listbox" aria-label="Filter by format" className="divide-y divide-gray-100">
+                    <li className="px-3 py-2">
+                      <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                          checked={modeFilter.length === 0}
+                          onChange={() => setModeFilter([])}
+                          aria-label="All formats"
+                        />
+                        <span className="text-sm text-gray-700">All formats</span>
+                      </label>
+                    </li>
+                    {modes.map((m) => {
+                      const checked = modeFilter.includes(m);
+                      return (
+                        <li key={m} className="px-3 py-2">
+                          <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                              checked={checked}
+                              onChange={() => {
+                                setModeFilter((prev) => {
+                                  if (prev.includes(m)) return prev.filter((v) => v !== m);
+                                  return [...prev, m];
+                                });
+                              }}
+                              aria-label={`Filter by format ${m}`}
+                            />
+                            <span className="text-sm text-gray-700">{m}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {(search || scaleFilter || locationFilter || modeFilter) && (
+          {(search || scaleFilter.length || locationFilter || modeFilter.length) && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <button
-                onClick={() => { setSearch(""); setScaleFilter(""); setLocationFilter(""); setModeFilter(""); }}
+                onClick={() => { setSearch(""); setScaleFilter([]); setLocationFilter(""); setModeFilter([]); setIsScaleOpen(false); setIsModeOpen(false); }}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
