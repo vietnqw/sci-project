@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, status, Request, HTTPException
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +26,8 @@ from app.schemas.competition import (
     CompetitionRejectPayload,
 )
 from app.schemas.user import UserSummary
+from datetime import datetime
+from pydantic import TypeAdapter
 
 
 router = APIRouter(prefix="/competitions", tags=["competitions"])
@@ -726,9 +728,29 @@ async def update_competition_with_files(
     if competition_link is not None:
         comp.competition_link = competition_link if competition_link else None
     if registration_deadline is not None:
-        comp.registration_deadline = (
-            registration_deadline if registration_deadline else None
+        # Parse ISO datetime string into timezone-aware datetime
+        registration_deadline_str = (
+            registration_deadline.strip()
+            if isinstance(registration_deadline, str)
+            else registration_deadline
         )
+        if not registration_deadline_str:
+            comp.registration_deadline = None
+        else:
+            try:
+                # Pydantic robustly parses ISO 8601, including 'Z' (UTC)
+                dt_adapter = TypeAdapter(datetime)
+                parsed_dt = dt_adapter.validate_python(registration_deadline_str)
+                if parsed_dt.tzinfo is None:
+                    # Enforce timezone-aware value per validation mixin semantics
+                    raise ValueError("registration_deadline must be timezone-aware")
+                comp.registration_deadline = parsed_dt
+            except Exception as e:
+                # Return a 400 for invalid datetime input instead of 500 from DB layer
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid registration_deadline: {e}",
+                )
     if location_country is not None:
         comp.location_country = location_country if location_country else None
     if location_city is not None:
