@@ -23,6 +23,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isSingleImageMode, setIsSingleImageMode] = useState(false);
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Not specified';
@@ -64,9 +65,10 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
     window.location.reload();
   };
 
-  const handleImageClick = (imageUrl: string, alt: string) => {
+  const handleImageClick = (imageUrl: string, alt: string, single = false) => {
     setSelectedImageUrl(imageUrl);
     setSelectedImageAlt(alt);
+    setIsSingleImageMode(single);
     setIsImageModalOpen(true);
   };
 
@@ -168,7 +170,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
           <div className="relative">
             {/* Hero Image */}
             {competition.background_image_url && (
-              <div className="h-64 relative cursor-pointer" onClick={() => handleImageClick(competition.background_image_url!, competition.title)}>
+              <div className="h-64 relative cursor-pointer" onClick={() => handleImageClick(competition.background_image_url!, competition.title, true)}>
                 <img
                   src={competition.background_image_url}
                   alt={competition.title}
@@ -276,7 +278,7 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
                       src={competition.detail_image_urls[currentImageIndex]}
                       alt={`${competition.title} detail ${currentImageIndex + 1}`}
                       className="w-full h-80 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onClick={() => handleImageClick(competition.detail_image_urls![currentImageIndex], `${competition.title} detail ${currentImageIndex + 1}`)}
+                      onClick={() => handleImageClick(competition.detail_image_urls![currentImageIndex], `${competition.title} detail ${currentImageIndex + 1}`, false)}
                     />
 
                     {/* Navigation Arrows */}
@@ -448,10 +450,10 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
         onClose={closeImageModal}
         imageUrl={selectedImageUrl}
         alt={selectedImageAlt}
-        allImages={competition.detail_image_urls}
+        allImages={isSingleImageMode ? [] : (competition.detail_image_urls || [])}
         currentIndex={currentImageIndex}
-        onPrevious={competition.detail_image_urls && competition.detail_image_urls.length > 1 ? handleModalPrevious : undefined}
-        onNext={competition.detail_image_urls && competition.detail_image_urls.length > 1 ? handleModalNext : undefined}
+        onPrevious={!isSingleImageMode && competition.detail_image_urls && competition.detail_image_urls.length > 1 ? handleModalPrevious : undefined}
+        onNext={!isSingleImageMode && competition.detail_image_urls && competition.detail_image_urls.length > 1 ? handleModalNext : undefined}
       />
 
       {/* Edit Competition Modal */}

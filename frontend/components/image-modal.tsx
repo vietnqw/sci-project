@@ -109,15 +109,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
           />
         </div>
 
-        {/* Image Info */}
-        <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-50 text-white p-4 rounded-lg">
-          <p className="text-sm opacity-90">{alt}</p>
-          {allImages.length > 1 && (
-            <p className="text-xs opacity-75 mt-1">
-              {currentIndex + 1} of {allImages.length}
-            </p>
-          )}
-        </div>
+        {/* Pure image - no extra info bar */}
       </div>
     </div>
   );
