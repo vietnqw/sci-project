@@ -6,6 +6,7 @@ import { toUtcISOString } from '../lib/date';
 import LocationSelector from './location-selector';
 import ImageUpload from './image-upload';
 import MultiImageUpload from './multi-image-upload';
+import RichTextEditor from './rich-text-editor';
 
 interface CreateCompetitionModalProps {
   isOpen: boolean;
@@ -70,9 +71,7 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
       newErrors.overview = 'Overview must be 255 characters or less';
     }
 
-    if (formData.description && formData.description.length > 8000) {
-      newErrors.description = 'Description must be 8000 characters or less';
-    }
+    // HTML length is not meaningful – enforce 10k visible characters in editor component instead
 
     if (formData.competition_link && !isValidUrl(formData.competition_link)) {
       newErrors.competition_link = 'Please enter a valid URL (e.g., https://example.com)';
@@ -304,24 +303,21 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSuccess }: C
           </div>
         </div>
 
-          {/* Description */}
+          {/* Description (Rich Text) */}
           <div>
             <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
               Description
             </label>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-h-[120px] ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Provide a brief description of the competition..."
-              maxLength={8000}
+            <RichTextEditor
+              value={formData.description || ''}
+              onChange={(html) => setFormData({ ...formData, description: html })}
+              placeholder="Describe the competition. Use formatting, lists, headings, and links."
+              maxVisibleChars={10000}
+              onOverflow={() => setErrors((e) => ({ ...e, description: 'Description is limited to 10,000 characters (visible).' }))}
             />
             <div className="mt-1 flex items-center justify-between">
               {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
-              <p className="text-xs text-gray-500 ml-auto">{formData.description?.length || 0}/8000</p>
+              <p className="text-xs text-gray-500 ml-auto">Max 10,000 characters</p>
             </div>
           </div>
 

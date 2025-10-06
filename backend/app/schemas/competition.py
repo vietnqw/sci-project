@@ -55,7 +55,7 @@ class CompetitionBase(CompetitionValidationMixin, BaseModel):
 
     title: str = Field(..., min_length=1, max_length=255)
     overview: str | None = Field(default=None, min_length=0, max_length=255)
-    description: str | None = Field(default=None, min_length=0, max_length=8000)
+    description: str | None = Field(default=None, min_length=0)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None
@@ -79,7 +79,7 @@ class CompetitionCreate(CompetitionBase):
 class CompetitionUpdate(CompetitionValidationMixin, BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     overview: str | None = Field(default=None, min_length=0, max_length=255)
-    description: str | None = Field(default=None, min_length=0, max_length=8000)
+    description: str | None = Field(default=None, min_length=0)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None
@@ -100,7 +100,7 @@ class CompetitionResponse(BaseModel):
     id: UUID
     title: str = Field(..., min_length=1, max_length=255)
     overview: str | None = Field(default=None, min_length=0, max_length=255)
-    description: str | None = Field(default=None, min_length=0, max_length=8000)
+    description: str | None = Field(default=None, min_length=0)
     competition_link: HttpUrl | None = Field(default=None)
     registration_deadline: datetime | None = None
     background_image_url: HttpUrl | None = None

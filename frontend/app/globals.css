@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* === Custom utilities from old frontend (for homepage parity) === */
 /* Custom animations for carousel */

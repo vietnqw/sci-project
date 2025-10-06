@@ -25,7 +25,10 @@ class Competition(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
     title = Column(String(255), nullable=False, index=True)
     overview = Column(String(255), nullable=True)
-    description = Column(String(8000), nullable=True)
+    # Use unbounded Text for description
+    from sqlalchemy import Text  # local import to avoid circulars in some tools
+
+    description = Column(Text, nullable=True)
     competition_link = Column(String(500), nullable=True)
     registration_deadline = Column(DateTime(timezone=True), nullable=True)
     background_image_url = Column(String(500), nullable=True)
@@ -65,10 +68,7 @@ class Competition(Base):
             "overview IS NULL OR (LENGTH(overview) >= 0 AND LENGTH(overview) <= 255)",
             name="ck_overview_length",
         ),
-        CheckConstraint(
-            "description IS NULL OR (LENGTH(description) >= 0 AND LENGTH(description) <= 8000)",
-            name="ck_description_length",
-        ),
+        # Removed description length constraint to allow unlimited content
         CheckConstraint(
             "LENGTH(location_country) >= 1 AND LENGTH(location_country) <= 255",
             name="ck_location_country_length",

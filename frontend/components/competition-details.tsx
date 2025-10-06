@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Competition, formatLocation } from '../app/api/competitions';
 import { formatDateOnlyInUserTimeZone } from '../lib/date';
 import { useAuth } from '../app/contexts/AuthContext';
@@ -8,6 +8,7 @@ import Breadcrumb from './breadcrumb';
 import CountdownClock from './countdown-clock';
 import ImageModal from './image-modal';
 import EditCompetitionModal from './edit-competition-modal';
+import DOMPurify from 'dompurify';
 
 interface CompetitionDetailsProps {
   competition: Competition;
@@ -344,15 +345,21 @@ const CompetitionDetails: React.FC<CompetitionDetailsProps> = ({ competition }) 
 
             {/* Competition Information */}
             {competition.description && (
-              <div className="rounded-xl shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">About this competition</h2>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-                    <div className="prose prose-lg max-w-none text-gray-700">
-                      <p className="leading-relaxed">{competition.description}</p>
-                    </div>
-                  </div>
+              <div className="rounded-xl shadow-lg px-8 pt-2 pb-2">
+                <div className="prose prose-lg max-w-none text-gray-700">
+                  {/* Render sanitized rich HTML from backend */}
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(competition.description, {
+                        ALLOWED_TAGS: [
+                          'p', 'strong', 'em', 'u', 's', 'blockquote', 'code', 'pre', 'ul', 'ol', 'li',
+                          'h1', 'h2', 'h3', 'br', 'a', 'span'
+                        ],
+                        ALLOWED_ATTR: ['href', 'target', 'rel'],
+                        ALLOW_DATA_ATTR: false,
+                      }),
+                    }}
+                  />
                 </div>
               </div>
             )}

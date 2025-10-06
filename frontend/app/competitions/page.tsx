@@ -30,7 +30,7 @@ function getFallbackImage(comp: Competition): string {
 }
 
 function mapCompetitionToDisplay(competition: Competition) {
-  const desc: string = competition?.description || "No description available";
+  const overviewText: string = competition?.overview || "";
   const scaleRaw: string | undefined = competition?.scale;
   const formatRaw: string | undefined = competition?.format;
 
@@ -43,7 +43,7 @@ function mapCompetitionToDisplay(competition: Competition) {
   return {
     id: competition.id,
     name: competition.title,
-    overview: desc,
+    overview: overviewText,
     scale: scaleRaw ? toTitle(scaleRaw) : "Unknown",
     location: formatLocation(competition),
     modes: formatRaw ? [toTitle(formatRaw)] : ["Unknown"],
