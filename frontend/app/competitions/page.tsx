@@ -400,7 +400,7 @@ function CompetitionsPageContent() {
             </div>
           </div>
 
-          {(search || scaleFilter.length || locationFilter || modeFilter.length) && (
+          {(Boolean(search) || scaleFilter.length > 0 || Boolean(locationFilter) || modeFilter.length > 0) && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <button
                 onClick={() => { setSearch(""); setScaleFilter([]); setLocationFilter(""); setModeFilter([]); setIsScaleOpen(false); setIsModeOpen(false); }}

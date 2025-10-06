@@ -368,7 +368,7 @@ class CompetitionsAPI {
 // Helper function to format location for display
 export const formatLocation = (competition: Competition): string => {
   if (competition.location_country && competition.location_city) {
-    return `${competition.location_country}, ${competition.location_city}`;
+    return `${competition.location_city}, ${competition.location_country}`;
   } else if (competition.location_country) {
     return competition.location_country;
   } else if (competition.location_city) {
