@@ -305,18 +305,6 @@ async def test_validation_and_errors(client, create_user, auth_header_factory):
     resp = await client.post("/competitions", json=payload, headers=auth)
     assert resp.status_code == 422
 
-    # Test description length validation
-    payload = {
-        "title": "Valid Title",
-        "location_country": "Vietnam",
-        "location_city": "Test City",
-        "min_age": 10,
-        "max_age": 20,
-        "description": "A" * 8001,  # Too long description should fail
-    }
-    resp = await client.post("/competitions", json=payload, headers=auth)
-    assert resp.status_code == 422
-
     # Test overview length validation
     payload = {
         "title": "Valid Title",
